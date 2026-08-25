@@ -1,0 +1,20 @@
+{
+  "/identity-api": {
+    "target": "http://localhost:5178",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/identity-api": "" }
+  },
+  "/customer-api": {
+    "target": "http://localhost:5180",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/customer-api": "" }
+  },
+  "/policy-api": {
+    "target": "http://localhost:5182",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/policy-api": "" }
+  }
+}
