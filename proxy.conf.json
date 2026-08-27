@@ -1,20 +1,26 @@
 {
-  "/identity-api": {
-    "target": "http://localhost:5178",
-    "secure": false,
+  "/gateway-api": {
+    "target": "https://insurance-api-gateway-rn0g.onrender.com",
+    "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/identity-api": "" }
+    "pathRewrite": { "^/gateway-api": "" }
+  },
+  "/identity-api": {
+    "target": "https://insurance-api-gateway-rn0g.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/identity-api": "/identity" }
   },
   "/customer-api": {
-    "target": "http://localhost:5180",
-    "secure": false,
+    "target": "https://insurance-api-gateway-rn0g.onrender.com",
+    "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/customer-api": "" }
+    "pathRewrite": { "^/customer-api": "/customers" }
   },
   "/policy-api": {
-    "target": "http://localhost:5182",
-    "secure": false,
+    "target": "https://insurance-api-gateway-rn0g.onrender.com",
+    "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/policy-api": "" }
+    "pathRewrite": { "^/policy-api": "/policies" }
   }
 }
