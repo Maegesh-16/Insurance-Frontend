@@ -20,6 +20,9 @@ export class AppShellComponent {
   }
 
   private canAccess(item: NavigationItem): boolean {
-    return !item.permission || this.session?.permissions.includes(item.permission) === true;
+    const hasRequiredRole = !item.roles || item.roles.some((role) => this.session?.roles.includes(role));
+    const hasRequiredPermission = !item.permission || this.session?.permissions.includes(item.permission) === true;
+
+    return hasRequiredRole && hasRequiredPermission;
   }
 }
