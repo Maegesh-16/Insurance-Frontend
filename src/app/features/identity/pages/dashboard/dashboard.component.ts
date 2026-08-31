@@ -25,8 +25,8 @@ export class DashboardComponent {
     { label: 'Profile and KYC', detail: 'Create or update your profile and submit verification documents.', route: '/profile', action: 'Manage profile' },
     { label: 'Policies', detail: 'Browse policy types, request coverage, and view your policies.', route: '/policies', action: 'Open policies' },
     { label: 'Claims', detail: 'Claim processing is available when Claim Service is deployed.' },
-    { label: 'Premiums and payments', detail: 'Premium schedules and payments are available when their services are deployed.' },
-    { label: 'Notifications', detail: 'Email, SMS, and push notification history is not deployed yet.' },
+    { label: 'Premiums', detail: 'Review your premium calculation, installment schedule, and payment history.', route: '/premiums', action: 'View premiums' },
+    { label: 'Notifications', detail: 'Review your email, SMS, and push notification history.', route: '/notifications', action: 'View notifications' },
     { label: 'AI assistant', detail: 'Recommendations and policy summaries are not deployed yet.' }
   ];
 

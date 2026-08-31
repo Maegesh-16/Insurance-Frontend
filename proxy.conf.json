@@ -22,5 +22,17 @@
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/policy-api": "/policies" }
+  },
+  "/notification-api": {
+    "target": "https://notificationservice-9ko7.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/notification-api": "" }
+  },
+  "/premium-api": {
+    "target": "https://premiumservice-bagg.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/premium-api": "" }
   }
 }
