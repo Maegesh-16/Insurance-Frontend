@@ -1,0 +1,20 @@
+<section>
+  <p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Policy management</p>
+  <h1 class="font-serif text-4xl leading-tight sm:text-5xl">Underwriting queue</h1>
+  <p class="mt-3 max-w-2xl text-base leading-7 text-emerald-900/65">Review policy applications, verify their calculated premium, and record every lifecycle decision.</p>
+  @if (error()) { <p class="mt-6 border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error() }}</p> }
+  @if (loading()) { <p class="mt-8 text-sm text-emerald-900/65">Loading policies...</p> } @else {
+    <div class="mt-8 overflow-x-auto border border-emerald-950/10 bg-white"><table class="w-full min-w-200 text-left text-sm"><thead class="border-b border-emerald-950/10 bg-emerald-50"><tr><th class="px-4 py-3">Policy</th><th class="px-4 py-3">Product</th><th class="px-4 py-3">Coverage</th><th class="px-4 py-3">Premium</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Submitted</th><th class="px-4 py-3"></th></tr></thead><tbody>@for (policy of policies(); track policy.id) { <tr class="border-b border-emerald-950/10 last:border-0"><td class="px-4 py-3 font-semibold">{{ policy.policyNumber }}</td><td class="px-4 py-3">{{ policy.policyType.name }}</td><td class="px-4 py-3">{{ policy.coverages[0]?.sumInsured | currency:'INR':'symbol':'1.0-0' }}</td><td class="px-4 py-3 font-semibold">{{ policy.premiumAmount | currency:'INR':'symbol':'1.0-0' }}</td><td class="px-4 py-3">{{ policyStatusLabel(policy.status) }}</td><td class="px-4 py-3">{{ policy.createdAtUtc | date:'mediumDate' }}</td><td class="px-4 py-3 text-right">@if (nextPolicyStatuses(policy.status).length > 0) { <button type="button" class="border border-emerald-800 px-3 py-2 font-semibold text-emerald-900 disabled:opacity-40" [disabled]="savingPolicyId() === policy.id" (click)="openPolicyDecision(policy)">Review</button> }</td></tr> } @empty { <tr><td colspan="7" class="px-4 py-5 text-emerald-900/65">No policy applications yet.</td></tr> }</tbody></table></div>
+  }
+</section>
+
+@if (selectedPolicy(); as policy) {
+  <div class="fixed inset-0 z-50 grid place-items-center bg-emerald-950/40 p-5" role="presentation">
+    <section class="w-full max-w-lg border border-emerald-950/10 bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="policy-dialog-title">
+      <p class="text-sm text-emerald-900/65">{{ policy.policyNumber }} · {{ policy.policyType.name }}</p><h2 id="policy-dialog-title" class="mt-1 font-serif text-3xl">Record underwriting decision</h2>
+      <label class="mt-6 grid gap-2 text-sm font-semibold">New status<select class="border border-emerald-900/20 px-3 py-2.5 font-normal" [ngModel]="targetPolicyStatus()" (ngModelChange)="targetPolicyStatus.set($event)">@for (status of nextPolicyStatuses(policy.status); track status) { <option [ngValue]="status">{{ policyStatusLabel(status) }}</option> }</select></label>
+      <label class="mt-4 grid gap-2 text-sm font-semibold">Underwriting note<textarea class="min-h-28 border border-emerald-900/20 px-3 py-2.5 font-normal" [ngModel]="underwritingRemarks()" (ngModelChange)="underwritingRemarks.set($event)" placeholder="Reason for this decision"></textarea></label>
+      <div class="mt-6 flex justify-end gap-3"><button class="border border-emerald-900/20 px-4 py-2 text-sm font-semibold" type="button" (click)="selectedPolicy.set(null)">Cancel</button><button class="border border-emerald-800 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" type="button" [disabled]="!underwritingRemarks().trim() || savingPolicyId() === policy.id" (click)="savePolicyDecision()">Save decision</button></div>
+    </section>
+  </div>
+}

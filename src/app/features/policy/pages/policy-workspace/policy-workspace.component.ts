@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CustomerResponse } from '../../../customer/models/customer.models';
 import { CreatePolicyRequest, PolicyResponse, PolicyType } from '../../models/policy.models';
 import { PolicyService } from '../../services/policy.service';
+import { UpdatePolicyRequest } from '../../models/policy.models';
 
 @Component({
   selector: 'app-policy-workspace',
@@ -19,7 +20,9 @@ export class PolicyWorkspaceComponent {
   protected readonly policies = signal<PolicyResponse[]>([]);
   protected readonly isSubmitting = signal(false);
   protected readonly error = signal('');
-  protected readonly createdPolicy = signal<PolicyResponse | null>(null);
+  protected readonly savedPolicy = signal<PolicyResponse | null>(null);
+  protected readonly lastSaveWasUpdate = signal(false);
+  protected readonly editingPolicyId = signal<string | null>(null);
   protected readonly customer = this.getStoredCustomer();
   protected readonly selectedPolicyTypeId = signal('');
   protected readonly selectedPolicyType = computed(() => this.policyTypes().find((item) => item.id === this.selectedPolicyTypeId()) ?? null);
@@ -51,6 +54,25 @@ export class PolicyWorkspaceComponent {
     this.selectedPolicyTypeId.set(policyType.id);
   }
 
+  protected editDraft(policy: PolicyResponse): void {
+    const coverage = policy.coverages[0];
+    if (policy.status !== 1 || !coverage) return;
+    this.error.set('');
+    this.savedPolicy.set(null);
+    this.editingPolicyId.set(policy.id);
+    this.selectedPolicyTypeId.set(policy.policyType.id);
+    this.form.reset({
+      policyTypeId: policy.policyType.id,
+      startDate: policy.startDate,
+      endDate: policy.endDate,
+      coverageName: coverage.name,
+      coverageDescription: coverage.description,
+      sumInsured: coverage.sumInsured,
+      deductible: coverage.deductible,
+      remarks: policy.remarks ?? ''
+    });
+  }
+
   protected submit(): void {
     if (!this.customer || this.form.invalid) { this.form.markAllAsTouched(); return; }
     const value = this.form.getRawValue();
@@ -59,18 +81,27 @@ export class PolicyWorkspaceComponent {
     if (!selectedType) { this.error.set('Choose a policy type first.'); return; }
     this.error.set('');
     this.isSubmitting.set(true);
-    const request: CreatePolicyRequest = {
-      policyNumber: `SC-${Date.now()}`,
+    const request = {
       customerId: this.customer.id,
       policyTypeId: selectedType.id,
       startDate: value.startDate,
       endDate: value.endDate,
-      premiumAmount: selectedType.basePremium,
+      premiumAmount: 0,
       coverages: [{ name: value.coverageName, description: value.coverageDescription, sumInsured: value.sumInsured, deductible: value.deductible }],
-      remarks: value.remarks.trim() || null
+      remarks: value.remarks.trim()
     };
-    this.policyService.create(request).subscribe({
-      next: (policy) => { this.createdPolicy.set(policy); this.policies.update((policies) => [policy, ...policies]); this.isSubmitting.set(false); },
+    const editingPolicyId = this.editingPolicyId();
+    const save = editingPolicyId
+      ? this.policyService.update(editingPolicyId, { ...request, status: 1 } satisfies UpdatePolicyRequest)
+      : this.policyService.create({ ...request, policyNumber: `SC-${Date.now()}`, remarks: request.remarks || null } satisfies CreatePolicyRequest);
+    save.subscribe({
+      next: (policy) => {
+        this.savedPolicy.set(policy);
+        this.lastSaveWasUpdate.set(!!editingPolicyId);
+        this.policies.update((policies) => editingPolicyId ? policies.map((item) => item.id === policy.id ? policy : item) : [policy, ...policies]);
+        this.editingPolicyId.set(null);
+        this.isSubmitting.set(false);
+      },
       error: (error: HttpErrorResponse) => { this.error.set(this.getErrorMessage(error)); this.isSubmitting.set(false); }
     });
   }
@@ -80,6 +111,10 @@ export class PolicyWorkspaceComponent {
   }
 
   private toDateInput(value: Date): string { return value.toISOString().slice(0, 10); }
+
+  protected policyStatusLabel(status: number): string {
+    return ({ 1: 'Draft', 2: 'Pending approval', 3: 'Active', 4: 'Lapsed', 5: 'Cancelled', 6: 'Expired' } as Record<number, string>)[status] ?? 'Unknown';
+  }
 
   private getErrorMessage(error: HttpErrorResponse): string {
     if (error.status === 0) return 'Cannot reach Policy Service. Start it on port 5182 and try again.';

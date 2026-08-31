@@ -47,8 +47,21 @@ export class KycReviewComponent {
     });
   }
 
+  protected viewDocument(kycCase: KycCaseSummary): void {
+    this.error.set('');
+    this.customerService.getKycDocument(kycCase.id).subscribe({
+      next: (document) => {
+        const documentUrl = URL.createObjectURL(document);
+        globalThis.open(documentUrl, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(documentUrl), 60_000);
+      },
+      error: (error: HttpErrorResponse) => { this.error.set(this.getErrorMessage(error)); }
+    });
+  }
+
   private getErrorMessage(error: HttpErrorResponse): string {
     if (error.status === 403) return 'Your account does not have KYC reviewer access.';
+    if (error.status === 404) return 'The submitted document is not available.';
     if (error.status === 0) return 'Cannot reach Customer Service. Start it on port 5180 and try again.';
     if (typeof error.error?.detail === 'string') return error.error.detail;
     if (typeof error.error?.title === 'string') return error.error.title;

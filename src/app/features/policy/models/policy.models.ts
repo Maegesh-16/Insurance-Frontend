@@ -24,6 +24,17 @@ export interface CreatePolicyRequest {
   remarks: string | null;
 }
 
+export interface UpdatePolicyRequest {
+  customerId: string;
+  policyTypeId: string;
+  startDate: string;
+  endDate: string;
+  premiumAmount: number;
+  status: number;
+  coverages: CoverageRequest[];
+  remarks: string;
+}
+
 export interface PolicyResponse extends CreatePolicyRequest {
   id: string;
   policyType: PolicyType;
@@ -31,4 +42,9 @@ export interface PolicyResponse extends CreatePolicyRequest {
   createdAtUtc: string;
   updatedAtUtc: string | null;
   history: Array<{ id: string; action: string; status: number; remarks: string; changedAtUtc: string }>;
+}
+
+export interface TransitionPolicyStatusRequest {
+  status: number;
+  remarks: string;
 }

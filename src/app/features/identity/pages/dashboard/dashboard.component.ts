@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { CustomerService } from '../../../customer/services/customer.service';
+import { PolicyService } from '../../../policy/services/policy.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -11,6 +13,8 @@ import { AuthService } from '../../services/auth.service';
 export class DashboardComponent {
   private readonly authService = inject(AuthService);
   private readonly http = inject(HttpClient);
+  private readonly customerService = inject(CustomerService);
+  private readonly policyService = inject(PolicyService);
   protected readonly session = this.authService.getSession();
   protected readonly firstName = this.session?.userName.split(' ')[0] ?? 'Member';
   private readonly roles = this.session?.roles ?? [];
@@ -33,9 +37,11 @@ export class DashboardComponent {
   protected readonly operationsCards = this.getOperationsCards();
   protected readonly operationsTitle = this.getOperationsTitle();
   protected readonly serviceHealth = signal<{ name: string; status: string }[]>([]);
+  protected readonly policyCount = signal<number | null>(null);
 
   constructor() {
     if (this.dashboardType === 'admin') this.loadServiceHealth();
+    if (this.dashboardType === 'customer') this.loadPolicyCount();
   }
 
   private getOperationsCards(): { label: string; detail: string; route?: string; action?: string }[] {
@@ -81,5 +87,15 @@ export class DashboardComponent {
       next: (response) => this.serviceHealth.update((items) => [...items, { name: endpoint.name, status: response.status }]),
       error: () => this.serviceHealth.update((items) => [...items, { name: endpoint.name, status: 'unavailable' }])
     }));
+  }
+
+  private loadPolicyCount(): void {
+    this.customerService.getCurrent().subscribe({
+      next: (customer) => this.policyService.getMine(customer.id).subscribe({
+        next: (policies) => this.policyCount.set(policies.length),
+        error: () => this.policyCount.set(null)
+      }),
+      error: () => this.policyCount.set(0)
+    });
   }
 }
