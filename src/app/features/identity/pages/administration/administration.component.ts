@@ -62,6 +62,7 @@ export class AdministrationComponent {
     });
   }
 
+
   protected revokeSessions(user: ManagedUser): void {
     if (!confirm(`Revoke all active sessions for ${user.userName}?`)) return;
     this.savingUserId.set(user.id);

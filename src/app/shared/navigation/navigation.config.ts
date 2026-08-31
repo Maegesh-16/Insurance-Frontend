@@ -10,6 +10,7 @@ export interface NavigationItem {
 export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { label: 'Overview', route: '/dashboard', exact: true },
   { label: 'User administration', route: '/administration', roles: ['PlatformAdmin'] },
+  { label: 'Policy management', route: '/policy-management', roles: ['PlatformAdmin'] },
   { label: 'Policies', route: '/policies', permission: 'Policy.Read' },
   { label: 'Claims', disabled: true },
   { label: 'Premiums', route: '/premiums', roles: ['Customer'] },

@@ -31,6 +31,10 @@ export class CustomerService {
     return this.http.get<KycCaseSummary[]>('/customer-api/api/kyc/cases/pending');
   }
 
+  getKycDocument(kycCaseId: string): Observable<Blob> {
+    return this.http.get(`/customer-api/api/kyc/cases/${kycCaseId}/document`, { responseType: 'blob' });
+  }
+
   decideKycCase(kycCaseId: string, verify: boolean, rejectionReason?: string): Observable<void> {
     return this.http.post<void>(`/customer-api/api/kyc/cases/${kycCaseId}/decision`, { verify, rejectionReason: rejectionReason || null });
   }
