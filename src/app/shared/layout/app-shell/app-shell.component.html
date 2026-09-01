@@ -1,39 +1,40 @@
-<main class="min-h-screen bg-stone-50 text-emerald-950">
-  <header class="border-b border-emerald-950/10 bg-white">
-    <div class="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-      <a class="flex items-center gap-2 font-bold tracking-wide" routerLink="/dashboard">
-        <span class="grid size-8 place-items-center rounded-full bg-amber-400 font-serif text-lg text-emerald-950">S</span>
-        SureCover
-      </a>
-      <div class="flex items-center gap-3">
-        <div class="hidden text-right sm:block"><p class="text-sm font-semibold">{{ session?.userName }}</p><p class="text-xs text-emerald-800/65">{{ session?.email }}</p></div>
-        <button type="button" (click)="signOut()" class="border border-emerald-900/20 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:border-emerald-800 hover:bg-emerald-50">Sign out</button>
-      </div>
-    </div>
-  </header>
+<div class="shell">
+  <aside class="shell-sidebar">
+    <a class="shell-brand" routerLink="/dashboard">
+      <span class="shell-brand-mark">S</span>
+      <span class="shell-brand-name">SureCover</span>
+    </a>
 
-  <div class="mx-auto grid max-w-7xl gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[210px_1fr] lg:py-10">
-    <nav class="flex gap-2 overflow-x-auto border-b border-emerald-950/10 pb-4 lg:block lg:border-b-0 lg:border-r lg:pb-0" aria-label="Application navigation">
+    <nav class="shell-nav" aria-label="Application navigation">
       @for (item of navigationItems; track item.label) {
         @if (item.route) {
-          <a class="shrink-0 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 lg:block" [routerLink]="item.route" routerLinkActive="bg-emerald-800! text-white!" [routerLinkActiveOptions]="{ exact: item.exact ?? false }">{{ item.label }}</a>
+          <a class="shell-nav-item" [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.exact ?? false }">{{ item.label }}</a>
         } @else {
-          <span class="shrink-0 px-4 py-3 text-sm text-emerald-800/60">{{ item.label }}</span>
+          <span class="shell-nav-item disabled">{{ item.label }}</span>
         }
       }
     </nav>
 
-    <section class="min-w-0"><router-outlet /></section>
-  </div>
-
-  <footer class="border-t border-emerald-950/10 bg-white">
-    <div class="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-5 text-sm text-emerald-900/65 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-      <p><span class="font-semibold text-emerald-900">SureCover</span> Insurance Policy Management Platform</p>
-      <div class="flex flex-wrap gap-x-5 gap-y-2">
-        <a class="transition hover:text-emerald-800" href="mailto:support@surecover.example">Support</a>
-        <span>Version 1.0</span>
-        <span>© 2026 SureCover</span>
+    <div class="shell-identity">
+      <div class="shell-avatar">{{ session?.userName?.slice(0, 2)?.toUpperCase() || 'SC' }}</div>
+      <div class="shell-identity-info">
+        <strong>{{ session?.userName }}</strong>
+        <span>{{ session?.email }}</span>
       </div>
+      <button class="shell-signout" type="button" (click)="signOut()">Logout</button>
     </div>
-  </footer>
-</main>
+  </aside>
+
+  <div class="shell-body">
+    <header class="shell-header">
+      <p class="shell-header-title">Insurance Platform</p>
+      <div class="shell-header-actions">
+        <span class="shell-header-role">{{ session?.roles?.[0] ?? 'Member' }}</span>
+      </div>
+    </header>
+
+    <main class="shell-main">
+      <router-outlet />
+    </main>
+  </div>
+</div>

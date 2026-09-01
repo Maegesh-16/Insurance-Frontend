@@ -6,22 +6,22 @@
     "pathRewrite": { "^/gateway-api": "" }
   },
   "/identity-api": {
-    "target": "https://insurance-api-gateway-rn0g.onrender.com",
+    "target": "https://insurance-identity-service.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/identity-api": "/identity" }
+    "pathRewrite": { "^/identity-api": "" }
   },
   "/customer-api": {
-    "target": "https://insurance-api-gateway-rn0g.onrender.com",
+    "target": "https://insurance-customer-service-mxdj.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/customer-api": "/customers" }
+    "pathRewrite": { "^/customer-api": "" }
   },
   "/policy-api": {
-    "target": "https://insurance-api-gateway-rn0g.onrender.com",
+    "target": "https://insurance-policy-service.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/policy-api": "/policies" }
+    "pathRewrite": { "^/policy-api": "" }
   },
   "/notification-api": {
     "target": "https://notificationservice-9ko7.onrender.com",
@@ -29,10 +29,34 @@
     "changeOrigin": true,
     "pathRewrite": { "^/notification-api": "" }
   },
+  "/payment-api": {
+    "target": "https://paymentservice-zfth.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/payment-api": "" }
+  },
   "/premium-api": {
     "target": "https://premiumservice-bagg.onrender.com",
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/premium-api": "" }
+  },
+  "/claim-api": {
+    "target": "https://insurance-claim-service-mq7u.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/claim-api": "" }
+  },
+  "/reporting-api": {
+    "target": "https://insurance-reporting-service.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/reporting-api": "" }
+  },
+  "/ai-assistant-api": {
+    "target": "https://insurance-ai-assistant-service.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/ai-assistant-api": "" }
   }
 }

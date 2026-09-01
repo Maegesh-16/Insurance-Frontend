@@ -6,7 +6,8 @@ import { NAVIGATION_ITEMS, NavigationItem } from '../../navigation/navigation.co
 @Component({
   selector: 'app-shell',
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
-  templateUrl: './app-shell.component.html'
+  templateUrl: './app-shell.component.html',
+  styleUrl: './app-shell.component.scss'
 })
 export class AppShellComponent {
   private readonly authService = inject(AuthService);
