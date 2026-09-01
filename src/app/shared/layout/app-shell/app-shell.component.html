@@ -1,0 +1,40 @@
+<div class="shell">
+  <aside class="shell-sidebar">
+    <a class="shell-brand" routerLink="/dashboard">
+      <span class="shell-brand-mark">S</span>
+      <span class="shell-brand-name">SureCover</span>
+    </a>
+
+    <nav class="shell-nav" aria-label="Application navigation">
+      @for (item of navigationItems; track item.label) {
+        @if (item.route) {
+          <a class="shell-nav-item" [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.exact ?? false }">{{ item.label }}</a>
+        } @else {
+          <span class="shell-nav-item disabled">{{ item.label }}</span>
+        }
+      }
+    </nav>
+
+    <div class="shell-identity">
+      <div class="shell-avatar">{{ session?.userName?.slice(0, 2)?.toUpperCase() || 'SC' }}</div>
+      <div class="shell-identity-info">
+        <strong>{{ session?.userName }}</strong>
+        <span>{{ session?.email }}</span>
+      </div>
+      <button class="shell-signout" type="button" (click)="signOut()">Logout</button>
+    </div>
+  </aside>
+
+  <div class="shell-body">
+    <header class="shell-header">
+      <p class="shell-header-title">Insurance Platform</p>
+      <div class="shell-header-actions">
+        <span class="shell-header-role">{{ session?.roles?.[0] ?? 'Member' }}</span>
+      </div>
+    </header>
+
+    <main class="shell-main">
+      <router-outlet />
+    </main>
+  </div>
+</div>
