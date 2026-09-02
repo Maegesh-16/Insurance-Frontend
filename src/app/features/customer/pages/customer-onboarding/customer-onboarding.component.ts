@@ -2,9 +2,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { CustomerRequest, CustomerResponse, CustomerUpdateRequest } from '../../models/customer.models';
+import { CustomerRequest, CustomerResponse, CustomerUpdateRequest, KycSubmissionResponse } from '../../models/customer.models';
 import { CustomerService } from '../../services/customer.service';
 import { AuthService } from '../../../identity/services/auth.service';
+
+interface KycSubmission extends Pick<KycSubmissionResponse, 'status' | 'submittedAtUtc'> {
+  caseId: string;
+}
 
 @Component({
   selector: 'app-customer-onboarding',
@@ -22,9 +26,11 @@ export class CustomerOnboardingComponent {
   protected readonly isSubmitting = signal(false);
   protected readonly isUploading = signal(false);
   protected readonly apiError = signal('');
+  protected readonly profileStatus = signal('');
   protected readonly uploadError = signal('');
   protected readonly uploadSuccess = signal('');
   protected readonly selectedFile = signal<File | null>(null);
+  protected readonly kycSubmission = signal<KycSubmission | null>(null);
   protected readonly includeAddress = signal(true);
   protected readonly includeNominee = signal(false);
   protected readonly fullName = this.session?.userName ?? '';
@@ -40,7 +46,19 @@ export class CustomerOnboardingComponent {
     this.loadCurrentCustomer();
   }
 
-  protected setAddressIncluded(included: boolean): void { this.includeAddress.set(included); }
+  protected setAddressIncluded(included: boolean): void {
+    this.includeAddress.set(included);
+    const addressControls = ['line1', 'city', 'state', 'postalCode', 'country'] as const;
+    for (const controlName of addressControls) {
+      const control = this.form.controls[controlName];
+      if (included) {
+        control.setValidators(Validators.required);
+      } else {
+        control.clearValidators();
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    }
+  }
   protected setNomineeIncluded(included: boolean): void { this.includeNominee.set(included); }
 
   protected selectDocument(event: Event): void {
@@ -63,6 +81,7 @@ export class CustomerOnboardingComponent {
     const documentType = this.form.controls.documentType.value;
     this.uploadError.set('');
     this.uploadSuccess.set('');
+    this.profileStatus.set('');
     if (!customer || !file || !documentType) {
       this.uploadError.set('Select a document type and choose a file before uploading.');
       return;
@@ -71,6 +90,10 @@ export class CustomerOnboardingComponent {
     this.customerService.uploadKycDocument(customer.id, documentType, file).subscribe({
       next: (result) => {
         this.uploadSuccess.set(`Document submitted. Case ${result.kycCaseId} is pending review.`);
+        this.profileStatus.set('Your KYC document was submitted for review.');
+        const submission = { caseId: result.kycCaseId, status: result.status, submittedAtUtc: new Date().toISOString() };
+        localStorage.setItem(this.getKycSubmissionKey(customer.id), JSON.stringify(submission));
+        this.kycSubmission.set(submission);
         this.selectedFile.set(null);
         this.isUploading.set(false);
       },
@@ -83,9 +106,12 @@ export class CustomerOnboardingComponent {
 
   protected submit(): void {
     this.apiError.set('');
+    this.profileStatus.set('');
     if (this.form.invalid || (this.includeNominee() && !this.hasCompleteNominee())) {
       this.form.markAllAsTouched();
-      if (this.includeNominee() && !this.hasCompleteNominee()) this.apiError.set('Complete the nominee name, relationship, and phone number.');
+      this.apiError.set(this.includeNominee() && !this.hasCompleteNominee()
+        ? 'Complete the nominee name, relationship, and phone number.'
+        : this.getFormValidationMessage());
       return;
     }
     const value = this.form.getRawValue();
@@ -104,7 +130,16 @@ export class CustomerOnboardingComponent {
       next: (customer) => {
         localStorage.setItem('insurance.customer', JSON.stringify(customer));
         this.currentCustomer.set(customer);
-        this.apiError.set('Your profile is saved. Upload your KYC document for review.');
+        this.kycSubmission.set(this.getStoredKycSubmission(customer.id));
+        this.customerService.getLatestKycSubmission(customer.id).subscribe({
+          next: (submission) => {
+            if (!submission) return;
+            const storedSubmission = { caseId: submission.caseId, status: submission.status, submittedAtUtc: submission.submittedAtUtc };
+            localStorage.setItem(this.getKycSubmissionKey(customer.id), JSON.stringify(storedSubmission));
+            this.kycSubmission.set(storedSubmission);
+          }
+        });
+        this.profileStatus.set('Your profile is saved. Upload your KYC document for review.');
         this.isSubmitting.set(false);
       },
       error: (error: HttpErrorResponse) => { this.apiError.set(this.getErrorMessage(error)); this.isSubmitting.set(false); }
@@ -114,9 +149,15 @@ export class CustomerOnboardingComponent {
   private loadCurrentCustomer(): void {
     this.customerService.getCurrent().subscribe({
       next: (customer) => {
+        if (!customer) {
+          localStorage.removeItem('insurance.customer');
+          this.currentCustomer.set(null);
+          return;
+        }
+
         localStorage.setItem('insurance.customer', JSON.stringify(customer));
         this.currentCustomer.set(customer);
-        this.includeAddress.set(customer.address !== null);
+        this.setAddressIncluded(customer.address !== null);
         this.includeNominee.set(customer.nominee !== null);
         this.form.patchValue({
           firstName: customer.firstName, lastName: customer.lastName, email: customer.email, phoneNumber: customer.phoneNumber,
@@ -130,7 +171,13 @@ export class CustomerOnboardingComponent {
         }
       },
       error: (error: HttpErrorResponse) => {
-        if (error.status !== 404) this.apiError.set(this.getErrorMessage(error));
+        if (error.status === 404) {
+          localStorage.removeItem('insurance.customer');
+          this.currentCustomer.set(null);
+          return;
+        }
+
+        this.apiError.set(this.getErrorMessage(error));
       }
     });
   }
@@ -140,10 +187,29 @@ export class CustomerOnboardingComponent {
     return !!nomineeName.trim() && !!nomineeRelationship.trim() && !!nomineePhone.trim();
   }
 
+  private getFormValidationMessage(): string {
+    return 'Complete the highlighted required fields before submitting.';
+  }
+
   private getStoredCustomer(): CustomerResponse | null {
     const storedCustomer = localStorage.getItem('insurance.customer');
     if (!storedCustomer) return null;
     try { return JSON.parse(storedCustomer) as CustomerResponse; } catch { return null; }
+  }
+
+  private getStoredKycSubmission(customerId: string): KycSubmission | null {
+    const storedSubmission = localStorage.getItem(this.getKycSubmissionKey(customerId));
+    if (!storedSubmission) return null;
+
+    try {
+      return JSON.parse(storedSubmission) as KycSubmission;
+    } catch {
+      return null;
+    }
+  }
+
+  private getKycSubmissionKey(customerId: string): string {
+    return `insurance.kyc-submission.${customerId}`;
   }
 
   private getErrorMessage(error: HttpErrorResponse): string {

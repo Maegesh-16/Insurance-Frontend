@@ -6,20 +6,20 @@
     "pathRewrite": { "^/gateway-api": "" }
   },
   "/identity-api": {
-    "target": "https://insurance-api-gateway-rn0g.onrender.com",
-    "secure": true,
+    "target": "http://localhost:5185",
+    "secure": false,
     "changeOrigin": true,
     "pathRewrite": { "^/identity-api": "/identity" }
   },
   "/customer-api": {
-    "target": "https://insurance-api-gateway-rn0g.onrender.com",
-    "secure": true,
+    "target": "http://localhost:5185",
+    "secure": false,
     "changeOrigin": true,
     "pathRewrite": { "^/customer-api": "/customers" }
   },
   "/policy-api": {
-    "target": "https://insurance-api-gateway-rn0g.onrender.com",
-    "secure": true,
+    "target": "http://localhost:5185",
+    "secure": false,
     "changeOrigin": true,
     "pathRewrite": { "^/policy-api": "/policies" }
   },

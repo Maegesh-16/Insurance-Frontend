@@ -2,15 +2,21 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.21.
 
-## Development server
+## Development
 
-To start a local development server, run:
+For frontend-only work, use the deployed services:
 
 ```bash
-ng serve
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+For backend work, first start the local Docker stack from `../Backend`, then use:
+
+```bash
+npm run start:local
+```
+
+Both commands start the application at `http://localhost:4200/` and reload it when source files change.
 
 ## Code scaffolding
 
