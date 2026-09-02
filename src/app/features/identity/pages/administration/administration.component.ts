@@ -34,6 +34,7 @@ export class AdministrationComponent {
 
   protected get totalPages(): number { return Math.max(1, Math.ceil(this.totalCount() / this.pageSize)); }
   protected isEditedRole(role: ManagedRole): boolean { return this.editedRoleIds().includes(role.id); }
+  protected isOperationalRole(role: ManagedRole): boolean { return role.name !== 'Customer'; }
 
   protected applyFilters(): void { this.page.set(1); this.loadUsers(); }
   protected changePage(page: number): void { this.page.set(page); this.loadUsers(); }
@@ -112,7 +113,7 @@ export class AdministrationComponent {
 
   private load(): void {
     this.administrationService.getRoles().subscribe({
-      next: (roles) => { this.roles.set(roles); this.loadUsers(); this.loadAudit(); },
+      next: (roles) => { this.roles.set(roles.filter((role) => this.isOperationalRole(role))); this.loadUsers(); this.loadAudit(); },
       error: (err: HttpErrorResponse) => { this.error.set(this.message(err)); this.loading.set(false); }
     });
   }

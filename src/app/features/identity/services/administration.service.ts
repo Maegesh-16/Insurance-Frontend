@@ -12,14 +12,13 @@ export interface CreateUserRequest { email: string; userName: string; password: 
 export class AdministrationService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/identity-api/api/administration';
-  private readonly authUrl = '/identity-api/api/auth';
 
   getUsers(search: string, role: string, page: number, pageSize: number): Observable<PagedUsers> {
     return this.http.get<PagedUsers>(`${this.apiUrl}/users`, { params: { search, role, page, pageSize } });
   }
   getRoles(): Observable<ManagedRole[]> { return this.http.get<ManagedRole[]>(`${this.apiUrl}/roles`); }
   createUser(request: CreateUserRequest): Observable<ManagedUser> {
-    return this.http.post<ManagedUser>(`${this.authUrl}/register-admin`, request);
+    return this.http.post<ManagedUser>(`${this.apiUrl}/users`, request);
   }
   updateRoles(userId: string, roleIds: string[]): Observable<void> { return this.http.put<void>(`${this.apiUrl}/users/${userId}/roles`, { roleIds }); }
   updateStatus(userId: string, isActive: boolean): Observable<void> { return this.http.put<void>(`${this.apiUrl}/users/${userId}/status`, { isActive }); }
