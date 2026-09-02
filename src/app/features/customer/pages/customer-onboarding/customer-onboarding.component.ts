@@ -130,15 +130,7 @@ export class CustomerOnboardingComponent {
       next: (customer) => {
         localStorage.setItem('insurance.customer', JSON.stringify(customer));
         this.currentCustomer.set(customer);
-        this.kycSubmission.set(this.getStoredKycSubmission(customer.id));
-        this.customerService.getLatestKycSubmission(customer.id).subscribe({
-          next: (submission) => {
-            if (!submission) return;
-            const storedSubmission = { caseId: submission.caseId, status: submission.status, submittedAtUtc: submission.submittedAtUtc };
-            localStorage.setItem(this.getKycSubmissionKey(customer.id), JSON.stringify(storedSubmission));
-            this.kycSubmission.set(storedSubmission);
-          }
-        });
+        this.loadLatestKycSubmission(customer.id);
         this.profileStatus.set('Your profile is saved. Upload your KYC document for review.');
         this.isSubmitting.set(false);
       },
@@ -157,6 +149,7 @@ export class CustomerOnboardingComponent {
 
         localStorage.setItem('insurance.customer', JSON.stringify(customer));
         this.currentCustomer.set(customer);
+        this.loadLatestKycSubmission(customer.id);
         this.setAddressIncluded(customer.address !== null);
         this.includeNominee.set(customer.nominee !== null);
         this.form.patchValue({
@@ -206,6 +199,18 @@ export class CustomerOnboardingComponent {
     } catch {
       return null;
     }
+  }
+
+  private loadLatestKycSubmission(customerId: string): void {
+    this.kycSubmission.set(this.getStoredKycSubmission(customerId));
+    this.customerService.getLatestKycSubmission(customerId).subscribe({
+      next: (submission) => {
+        if (!submission) return;
+        const storedSubmission = { caseId: submission.caseId, status: submission.status, submittedAtUtc: submission.submittedAtUtc };
+        localStorage.setItem(this.getKycSubmissionKey(customerId), JSON.stringify(storedSubmission));
+        this.kycSubmission.set(storedSubmission);
+      }
+    });
   }
 
   private getKycSubmissionKey(customerId: string): string {
