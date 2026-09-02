@@ -11,7 +11,7 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { label: 'Overview', route: '/dashboard', exact: true },
   { label: 'User administration', route: '/administration', roles: ['PlatformAdmin'] },
   { label: 'Premium plans', route: '/premium-plans', roles: ['PlatformAdmin'] },
-  { label: 'Policy management', route: '/policy-management', roles: ['PlatformAdmin'] },
+  { label: 'Policy management', route: '/policy-management', roles: ['PolicyUnderwriter'] },
   { label: 'Profile and KYC', route: '/profile', roles: ['Customer'] },
   { label: 'Policies', route: '/policies', roles: ['Customer', 'PolicyUnderwriter', 'SupportAgent'] },
   { label: 'Premiums', route: '/premiums', roles: ['Customer'] },

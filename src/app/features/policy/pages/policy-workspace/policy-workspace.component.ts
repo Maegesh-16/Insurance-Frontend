@@ -52,6 +52,8 @@ export class PolicyWorkspaceComponent {
   protected selectPolicyType(policyType: PolicyType): void {
     this.form.controls.policyTypeId.setValue(policyType.id);
     this.selectedPolicyTypeId.set(policyType.id);
+    const coverageDefaults = this.getCoverageDefaults(policyType.code);
+    this.form.patchValue(coverageDefaults);
   }
 
   protected editDraft(policy: PolicyResponse): void {
@@ -75,6 +77,10 @@ export class PolicyWorkspaceComponent {
 
   protected submit(): void {
     if (!this.customer || this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.customer.kyc?.status !== 2) {
+      this.error.set('Your KYC must be verified before you can submit a policy application.');
+      return;
+    }
     const value = this.form.getRawValue();
     if (value.startDate > value.endDate) { this.error.set('The policy end date must be after its start date.'); return; }
     const selectedType = this.selectedPolicyType();
@@ -86,14 +92,13 @@ export class PolicyWorkspaceComponent {
       policyTypeId: selectedType.id,
       startDate: value.startDate,
       endDate: value.endDate,
-      premiumAmount: 0,
       coverages: [{ name: value.coverageName, description: value.coverageDescription, sumInsured: value.sumInsured, deductible: value.deductible }],
       remarks: value.remarks.trim()
     };
     const editingPolicyId = this.editingPolicyId();
     const save = editingPolicyId
       ? this.policyService.update(editingPolicyId, { ...request, status: 1 } satisfies UpdatePolicyRequest)
-      : this.policyService.create({ ...request, policyNumber: `SC-${Date.now()}`, remarks: request.remarks || null } satisfies CreatePolicyRequest);
+      : this.policyService.create({ ...request, remarks: request.remarks || null } satisfies CreatePolicyRequest);
     save.subscribe({
       next: (policy) => {
         this.savedPolicy.set(policy);
@@ -111,6 +116,15 @@ export class PolicyWorkspaceComponent {
   }
 
   private toDateInput(value: Date): string { return value.toISOString().slice(0, 10); }
+
+  private getCoverageDefaults(policyTypeCode: string): Pick<{ coverageName: string; coverageDescription: string; sumInsured: number; deductible: number }, 'coverageName' | 'coverageDescription' | 'sumInsured' | 'deductible'> {
+    return ({
+      AUTO_COMPREHENSIVE: { coverageName: 'Comprehensive motor cover', coverageDescription: 'Collision, theft, and third-party liability protection.', sumInsured: 800000, deductible: 5000 },
+      HEALTH_STANDARD: { coverageName: 'Hospitalization cover', coverageDescription: 'In-patient treatment and hospitalization expenses.', sumInsured: 500000, deductible: 10000 },
+      LIFE_PROTECT: { coverageName: 'Life protection benefit', coverageDescription: 'Life cover payable to the recorded nominee or beneficiary.', sumInsured: 1000000, deductible: 0 }
+    } as Record<string, { coverageName: string; coverageDescription: string; sumInsured: number; deductible: number }>)[policyTypeCode]
+      ?? { coverageName: 'Core protection', coverageDescription: 'Essential protection for your selected policy.', sumInsured: 500000, deductible: 0 };
+  }
 
   protected policyStatusLabel(status: number): string {
     return ({ 1: 'Draft', 2: 'Pending approval', 3: 'Active', 4: 'Lapsed', 5: 'Cancelled', 6: 'Expired' } as Record<number, string>)[status] ?? 'Unknown';

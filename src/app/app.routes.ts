@@ -26,7 +26,7 @@ export const routes: Routes = [
 		children: [
 			{ path: 'dashboard', component: DashboardComponent, title: 'Dashboard | SureCover' },
 			{ path: 'administration', component: AdministrationComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Administration | SureCover' },
-			{ path: 'policy-management', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Policy Management | SureCover' },
+			{ path: 'policy-management', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PolicyUnderwriter'] }, title: 'Policy Management | SureCover' },
 			{ path: 'premium-plans', component: PremiumPlansComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Premium Plans | SureCover' },
 			{ path: 'profile', component: CustomerOnboardingComponent, canActivate: [authGuard], data: { roles: ['Customer'] }, title: 'Profile and KYC | SureCover' },
 			{ path: 'kyc-review', component: KycReviewComponent, canActivate: [authGuard], data: { roles: ['KycReviewer'] }, title: 'KYC Review | SureCover' },
