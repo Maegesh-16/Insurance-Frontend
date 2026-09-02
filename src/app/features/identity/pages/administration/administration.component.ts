@@ -28,7 +28,7 @@ export class AdministrationComponent {
   protected readonly creatingUser = signal(false);
   protected readonly createError = signal('');
   protected readonly createSuccess = signal('');
-  protected newUser: CreateUserRequest & { confirmPassword: string } = this.blankUser();
+  protected newUser: CreateUserRequest = this.blankUser();
 
   constructor() { this.load(); }
 
@@ -46,16 +46,14 @@ export class AdministrationComponent {
   }
 
   protected submitCreateUser(): void {
-    if (!this.newUser.email || !this.newUser.userName || !this.newUser.password) { this.createError.set('Email, username, and password are required.'); return; }
-    if (this.newUser.password !== this.newUser.confirmPassword) { this.createError.set('Passwords do not match.'); return; }
+    if (!this.newUser.email || !this.newUser.userName) { this.createError.set('Email and username are required.'); return; }
     if (!this.newUser.roleIds.length) { this.createError.set('Assign at least one role.'); return; }
     this.creatingUser.set(true);
     this.createError.set('');
-    const { confirmPassword: _, ...request } = this.newUser;
-    this.administrationService.createUser(request).subscribe({
+    this.administrationService.createUser(this.newUser).subscribe({
       next: (user) => {
         this.creatingUser.set(false);
-        this.createSuccess.set(`User ${user.userName} created successfully.`);
+        this.createSuccess.set(`Invitation sent to ${user.userName}. They will set their own password.`);
         this.newUser = this.blankUser();
         this.loadUsers();
         this.loadAudit();
@@ -102,6 +100,15 @@ export class AdministrationComponent {
     });
   }
 
+  protected sendPasswordReset(user: ManagedUser): void {
+    if (!confirm(`Send a password reset link to ${user.userName}?`)) return;
+    this.savingUserId.set(user.id);
+    this.administrationService.sendPasswordReset(user.id).subscribe({
+      next: () => { this.savingUserId.set(null); this.loadAudit(); },
+      error: (err: HttpErrorResponse) => { this.error.set(this.message(err)); this.savingUserId.set(null); }
+    });
+  }
+
   protected deleteUser(user: ManagedUser): void {
     if (!confirm(`Delete ${user.userName}? This cannot be undone.`)) return;
     this.savingUserId.set(user.id);
@@ -131,8 +138,8 @@ export class AdministrationComponent {
     this.administrationService.getAudit().subscribe({ next: (entries) => this.auditEntries.set(entries), error: () => {} });
   }
 
-  private blankUser(): CreateUserRequest & { confirmPassword: string } {
-    return { email: '', userName: '', password: '', confirmPassword: '', roleIds: [] };
+  private blankUser(): CreateUserRequest {
+    return { email: '', userName: '', roleIds: [] };
   }
 
   private message(err: HttpErrorResponse): string {

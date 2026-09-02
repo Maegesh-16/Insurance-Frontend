@@ -19,6 +19,8 @@ export const routes: Routes = [
 	{ path: '', pathMatch: 'full', redirectTo: 'login' },
 	{ path: 'login', component: AuthPageComponent, data: { mode: 'login' }, title: 'Sign in | SureCover' },
 	{ path: 'register', component: AuthPageComponent, data: { mode: 'register' }, title: 'Create account | SureCover' },
+	{ path: 'forgot-password', component: AuthPageComponent, data: { mode: 'forgot-password' }, title: 'Reset password | SureCover' },
+	{ path: 'reset-password', component: AuthPageComponent, data: { mode: 'reset-password' }, title: 'Set password | SureCover' },
 	{
 		path: '',
 		component: AppShellComponent,
