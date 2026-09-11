@@ -13,8 +13,8 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { label: 'Policy management', route: '/policy-management', roles: ['PlatformAdmin'] },
   { label: 'Policies', route: '/policies', permission: 'Policy.Read' },
   { label: 'Claims', disabled: true },
-  { label: 'Premiums', route: '/premiums', roles: ['Customer'] },
-  { label: 'Payments', disabled: true },
+  { label: 'Premiums', route: '/premiums', roles: ['Customer', 'PlatformAdmin'] },
+  { label: 'Payments', route: '/payments', roles: ['Customer'] },
   { label: 'Notifications', route: '/notifications', roles: ['Customer'] },
   { label: 'Profile and KYC', route: '/profile', roles: ['Customer'] },
   { label: 'KYC review', route: '/kyc-review', permission: 'Kyc.Verify' }

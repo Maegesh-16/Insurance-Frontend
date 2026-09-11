@@ -1,9 +1,17 @@
 <section class="max-w-6xl">
-  <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Policy billing</p>
+  <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">{{ isAdmin ? 'Premium administration' : 'Policy billing' }}</p>
   <h1 class="mt-2 font-serif text-4xl leading-tight sm:text-5xl">Premiums</h1>
-  <p class="mt-3 max-w-2xl text-sm leading-6 text-emerald-900/65">Review your premium calculation, installment schedule, and recorded payments. Payments are handled separately.</p>
+  <p class="mt-3 max-w-2xl text-sm leading-6 text-emerald-900/65">{{ isAdmin ? 'Configure premium plans for every insurance product.' : 'Review your premium calculation, installment schedule, and recorded payments. Payments are handled separately.' }}</p>
 
   @if (error()) { <p role="alert" class="mt-6 border-l-4 border-red-600 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{{ error() }}</p> }
+  @if (success()) { <p class="mt-6 border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ success() }}</p> }
+  @if (isAdmin) {
+    <section class="mt-8 border border-emerald-950/10 bg-white p-5 sm:p-7">
+      <h2 class="font-serif text-2xl">Add premium plan</h2>
+      <div class="mt-5 grid gap-4 md:grid-cols-4"><label class="grid gap-2 text-sm font-semibold">Policy type<select class="border border-emerald-900/20 bg-white px-3 py-2.5 font-normal" [ngModel]="newPlanPolicyTypeId()" (ngModelChange)="newPlanPolicyTypeId.set($event)">@for (type of policyTypes(); track type.id) { <option [value]="type.id">{{ type.name }}</option> }</select></label><label class="grid gap-2 text-sm font-semibold">Frequency<select class="border border-emerald-900/20 bg-white px-3 py-2.5 font-normal" [ngModel]="newPlanFrequency()" (ngModelChange)="newPlanFrequency.set($event)"><option>Monthly</option><option>Quarterly</option><option>HalfYearly</option><option>Annual</option></select></label><label class="grid gap-2 text-sm font-semibold">Base premium<input class="border border-emerald-900/20 px-3 py-2.5 font-normal" type="number" min="1" [ngModel]="newPlanBasePremium()" (ngModelChange)="newPlanBasePremium.set($event === '' ? null : +$event)"></label><div class="flex items-end"><button class="w-full border border-emerald-800 bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50" type="button" [disabled]="!newPlanPolicyTypeId() || !newPlanBasePremium() || isSavingPlan()" (click)="addPlan()">Add plan</button></div></div>
+    </section>
+    <section class="mt-8 overflow-x-auto border border-emerald-950/10 bg-white"><table class="w-full min-w-160 text-left text-sm"><thead class="border-b border-emerald-950/10 bg-emerald-50"><tr><th class="px-4 py-3">Policy type</th><th class="px-4 py-3">Frequency</th><th class="px-4 py-3 text-right">Base premium</th></tr></thead><tbody>@for (plan of plans(); track plan.planId) { <tr class="border-b border-emerald-950/10 last:border-0"><td class="px-4 py-3 font-semibold">{{ policyTypeName(plan.policyTypeId) }}</td><td class="px-4 py-3">{{ plan.frequency | titlecase }}</td><td class="px-4 py-3 text-right font-semibold">{{ plan.basePremium | currency:'INR':'symbol':'1.0-0' }}</td></tr> } @empty { <tr><td class="px-4 py-5 text-emerald-900/65" colspan="3">No premium plans are configured yet.</td></tr> }</tbody></table></section>
+  } @else {
   @if (isLoading()) { <p class="mt-8 text-sm text-emerald-900/65">Loading premium details...</p> }
   @if (!isLoading() && policies().length === 0 && !error()) { <section class="mt-8 border border-dashed border-emerald-800/30 bg-amber-50/60 px-6 py-12 text-center"><p class="text-xs font-bold uppercase tracking-[0.14em] text-emerald-800">No policy selected</p><h2 class="mt-3 font-serif text-3xl">Create a policy first.</h2><p class="mt-3 text-sm text-emerald-900/65">Premium schedules are available once your policy has been created.</p></section> }
   @if (selectedPolicy(); as policy) {
@@ -20,5 +28,6 @@
     </div>
 
     <section class="mt-8 border border-emerald-950/10 bg-white"><div class="border-b border-emerald-950/10 px-5 py-4"><p class="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Payment record</p><h2 class="mt-1 font-serif text-2xl">Premium payment history</h2></div>@if (history().length === 0) { <p class="px-5 py-8 text-sm text-emerald-900/65">No premium payments have been recorded yet.</p> } @else { <div class="divide-y divide-emerald-950/10">@for (payment of history(); track payment.historyId) { <article class="flex flex-wrap items-center justify-between gap-3 px-5 py-4"><p class="text-sm text-emerald-900/65">{{ payment.paidDate | date:'medium' }}</p><p class="font-bold">{{ payment.amount | currency:'INR':'symbol':'1.0-0' }}</p></article> }</div> }</section>
+  }
   }
 </section>

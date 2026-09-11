@@ -5,6 +5,12 @@ export interface PremiumPlan {
   basePremium: number;
 }
 
+export interface CreatePremiumPlanRequest {
+  policyTypeId: string;
+  frequency: string;
+  basePremium: number;
+}
+
 export interface PremiumCalculation {
   policyId: string;
   planId: string;
