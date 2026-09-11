@@ -40,5 +40,23 @@
     "secure": false,
     "changeOrigin": true,
     "pathRewrite": { "^/payment-api": "" }
+  },
+  "/claim-api": {
+    "target": "https://insurance-claim-service-mq7u.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/claim-api": "" }
+  },
+  "/reporting-api": {
+    "target": "https://insurance-reporting-service.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/reporting-api": "" }
+  },
+  "/ai-assistant-api": {
+    "target": "https://insurance-ai-assistant-service.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/ai-assistant-api": "" }
   }
 }

@@ -11,6 +11,8 @@ export class AuthService {
 
   login(request: LoginRequest): Observable<AuthResponse> { return this.http.post<AuthResponse>(`${this.apiUrl}/login`, request); }
   register(request: RegisterRequest): Observable<AuthResponse> { return this.http.post<AuthResponse>(`${this.apiUrl}/register`, request); }
+  requestPasswordReset(email: string): Observable<void> { return this.http.post<void>(`${this.apiUrl}/forgot-password`, { email }); }
+  resetPassword(token: string, password: string): Observable<void> { return this.http.post<void>(`${this.apiUrl}/reset-password`, { token, password }); }
   saveSession(response: AuthResponse): void { localStorage.setItem(this.sessionKey, JSON.stringify(response)); }
 
   getSession(): AuthResponse | null {

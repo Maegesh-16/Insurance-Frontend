@@ -16,6 +16,7 @@ export interface CustomerKycResponse { documentType: string; documentNumber: str
 export interface CustomerResponse extends Omit<CustomerRequest, 'kyc'> { id: string; identityUserId: string; isActive: boolean; createdAtUtc: string; updatedAtUtc: string | null; kyc: CustomerKycResponse | null; }
 export interface CustomerUpdateRequest extends Omit<CustomerRequest, 'kyc'> { isActive: boolean; kyc: null; }
 export interface KycUploadResponse { kycCaseId: string; status: string; }
+export interface KycSubmissionResponse { caseId: string; status: string; submittedAtUtc: string; rejectionReason: string | null; }
 export interface KycCaseSummary {
   id: string;
   customerId: string;
