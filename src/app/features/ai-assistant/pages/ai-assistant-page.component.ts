@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router } from '@angular/router';
-import { LucideAlertTriangle, LucideArrowLeft, LucideBot, LucideCheck, LucideChevronRight, LucideFileText, LucideHistory, LucideLoaderCircle, LucideMessageSquare, LucidePlus, LucideSend, LucideShieldCheck, LucideSlidersHorizontal, LucideSparkles, LucideUpload, LucideUserRound, LucideX } from '@lucide/angular';
+import { LucideAlertTriangle, LucideArrowLeft, LucideBot, LucideCheck, LucideChevronRight, LucideFileText, LucideHistory, LucideLoaderCircle, LucideMessageSquare, LucidePlus, LucideSend, LucideShieldCheck, LucideSlidersHorizontal, LucideSparkles, LucideUserRound, LucideX } from '@lucide/angular';
 import { AiAssistantApiService, ClaimRecommendation, Configuration, ConfigurationRequest, Feedback, FeedbackRequest, FraudAssessment, Lookup, PromptHistory, Summary, SummaryRequest } from '../services/ai-assistant-api.service';
 import { AuthService } from '../../identity/services/auth.service';
 
@@ -19,7 +19,7 @@ interface AssistantProfile {
 
 @Component({
   selector: 'app-ai-assistant-page',
-  imports: [FormsModule, LucideAlertTriangle, LucideArrowLeft, LucideBot, LucideCheck, LucideChevronRight, LucideFileText, LucideHistory, LucideLoaderCircle, LucideMessageSquare, LucidePlus, LucideSend, LucideShieldCheck, LucideSlidersHorizontal, LucideSparkles, LucideUpload, LucideUserRound, LucideX],
+  imports: [FormsModule, LucideAlertTriangle, LucideArrowLeft, LucideBot, LucideCheck, LucideChevronRight, LucideFileText, LucideHistory, LucideLoaderCircle, LucideMessageSquare, LucidePlus, LucideSend, LucideShieldCheck, LucideSlidersHorizontal, LucideSparkles, LucideUserRound, LucideX],
   templateUrl: './ai-assistant-page.component.html',
   styleUrl: './ai-assistant-page.component.scss',
 })
@@ -28,7 +28,6 @@ export class AiAssistantPageComponent {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly storageKey = 'ai-assistant-service-token';
-  private readonly sessionsStorageKey = 'ai-assistant-chat-sessions';
   protected readonly activeView = signal<View>('command');
   protected readonly showConnection = signal(false);
   protected readonly showRequestOptions = signal(false);
@@ -43,7 +42,7 @@ export class AiAssistantPageComponent {
   protected readonly sessionId = signal<string>(crypto.randomUUID());
   protected readonly history = signal<PromptHistory[]>([]);
   protected readonly historyLoading = signal(false);
-  protected readonly chatSessions = signal<ChatSession[]>(this.getStoredSessions());
+  protected readonly chatSessions = signal<ChatSession[]>([]);
   protected readonly selectedHistorySessionId = signal<string | null>(null);
   protected readonly reviewLoading = signal(false);
   protected readonly reviewSearched = signal(false);
@@ -63,7 +62,7 @@ export class AiAssistantPageComponent {
   protected readonly roleProfile = computed(() => this.getRoleProfile(this.currentRoles()));
   protected readonly availableViews = computed(() => this.roleProfile().views);
   protected readonly messages = signal<ConversationMessage[]>([{ id: 'welcome', role: 'assistant', content: this.getRoleProfile(this.currentRoles()).intro }]);
-  protected readonly viewTitle = computed(() => ({ command: 'AI Assistant', history: 'Chat history', review: 'Claim review', feedback: 'Response feedback', summaries: 'Summaries', configuration: 'Model configuration', knowledge: 'Knowledge base', kyc: 'KYC guidance', lookups: 'Reference data' })[this.activeView()]);
+  protected readonly viewTitle = computed(() => ({ command: 'AI Assistant', history: 'Chat history', review: 'Claim review', feedback: 'Response feedback', summaries: 'Summaries', configuration: 'Model configuration', knowledge: 'Knowledge base', kyc: 'KYC approval', lookups: 'Reference data' })[this.activeView()]);
   protected readonly roleLabel = computed(() => this.currentRoles().length ? this.currentRoles().join(', ') : 'Role verified by service');
   protected draft = '';
   protected tokenInput = localStorage.getItem(this.storageKey) ?? '';
@@ -74,7 +73,7 @@ export class AiAssistantPageComponent {
   protected claimId = '';
   protected knowledgeSource = '';
   protected knowledgeDomain = 'ClaimsProcedures';
-  protected knowledgeRoles = 'Administrator';
+  protected knowledgeRoles = 'PlatformAdmin';
   protected knowledgeContent = '';
   protected kycDocumentName = '';
   protected kycDocumentMessage = '';
@@ -112,7 +111,7 @@ export class AiAssistantPageComponent {
     const currentMessages = [...this.messages(), { id: crypto.randomUUID(), role: 'user' as const, content }];
     this.messages.set(currentMessages); this.draft = ''; this.isSending.set(true); this.errorMessage.set('');
     this.api.sendChat({ sessionId: this.sessionId(), referenceType: this.referenceType || undefined, referenceId: this.referenceId ? Number(this.referenceId) : undefined, promptTypeId: this.promptTypeId, messages: currentMessages.map(({ role, content: messageContent }) => ({ role, content: messageContent })), temperature: Number(this.temperature) }).subscribe({
-      next: (response) => { if (response.sessionId) this.sessionId.set(response.sessionId); this.rememberSession(content); this.messages.update((messages) => [...messages, { id: crypto.randomUUID(), role: 'assistant', content: response.responseText, sources: response.sources }]); this.isSending.set(false); },
+      next: (response) => { if (response.sessionId) this.sessionId.set(response.sessionId); this.loadRecentChatSessions(false); this.messages.update((messages) => [...messages, { id: crypto.randomUUID(), role: 'assistant', content: response.responseText, sources: response.sources }]); this.isSending.set(false); },
       error: (error) => this.handleError(error, 'The AI service could not complete this request.'),
     });
   }
@@ -140,7 +139,7 @@ export class AiAssistantPageComponent {
       this.knowledgeSource = `KYC guidance - ${file.name}`;
       this.knowledgeDomain = 'SupportFaqs';
       this.knowledgeContent = String(reader.result ?? '');
-      this.kycDocumentMessage = 'Guidance loaded. An administrator can now index it for role-filtered retrieval.';
+      this.kycDocumentMessage = 'Guidance loaded. A platform administrator can now index it for role-filtered retrieval.';
     };
     reader.readAsText(file);
   }
@@ -176,18 +175,26 @@ export class AiAssistantPageComponent {
       error: () => {}
     });
   }
-  private onRouteChanged(view: View): void { if (!this.canAccessView(view)) { void this.router.navigate(['/ai-assistant', 'command']); return; } this.activeView.set(view); this.operationMessage.set(''); if (view === 'command' && !this.promptTypes().length) this.loadPromptTypes(); if (view === 'history') this.loadHistory(); if (view === 'feedback') this.loadFeedbackCategories(); if (view === 'summaries') this.loadSummaryTypes(); if (view === 'configuration') this.loadConfigurations(); if (view === 'lookups') this.loadLookupCatalog(); }
-  private rememberSession(title: string): void {
-    const session = { id: this.sessionId(), title: title.slice(0, 80), updatedAt: new Date().toISOString() };
-    const sessions = [session, ...this.chatSessions().filter((item) => item.id !== session.id)];
-    this.chatSessions.set(sessions);
-    localStorage.setItem(this.sessionsStorageKey, JSON.stringify(sessions));
-  }
-  private getStoredSessions(): ChatSession[] {
-    try {
-      const sessions = JSON.parse(localStorage.getItem(this.sessionsStorageKey) ?? '[]') as ChatSession[];
-      return sessions.filter((item) => item.id && item.title && item.updatedAt);
-    } catch { return []; }
+  private onRouteChanged(view: View): void { if (!this.canAccessView(view)) { void this.router.navigate(['/ai-assistant', 'command']); return; } this.activeView.set(view); this.operationMessage.set(''); if (view === 'command' && !this.promptTypes().length) this.loadPromptTypes(); if (view === 'history') this.loadRecentChatSessions(); if (view === 'feedback') this.loadFeedbackCategories(); if (view === 'summaries') this.loadSummaryTypes(); if (view === 'configuration') this.loadConfigurations(); if (view === 'lookups') this.loadLookupCatalog(); }
+  private loadRecentChatSessions(showLoading = true): void {
+    const userId = Number(this.authService.getSession()?.userId);
+    if (!this.isConnected() || !Number.isSafeInteger(userId)) return;
+    if (showLoading) this.historyLoading.set(true);
+    this.api.getRecentPromptHistory(userId).subscribe({
+      next: (entries) => {
+        const sessions = new Map<string, ChatSession>();
+        for (const entry of entries) {
+          const sessionId = entry.sessionId || `prompt-${entry.promptHistoryId}`;
+          const existing = sessions.get(sessionId);
+          if (!existing || new Date(entry.requestedAt) > new Date(existing.updatedAt)) {
+            sessions.set(sessionId, { id: sessionId, title: entry.promptText.slice(0, 80), updatedAt: entry.requestedAt });
+          }
+        }
+        this.chatSessions.set([...sessions.values()].sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()));
+        if (showLoading) this.historyLoading.set(false);
+      },
+      error: (error) => { if (showLoading) this.historyLoading.set(false); this.handleError(error, 'Saved chat history is unavailable.'); },
+    });
   }
   private loadFeedbackCategories(): void { if (!this.isConnected() || this.feedbackCategories().length) return; this.api.getFeedbackCategories().subscribe({ next: (items) => { this.feedbackCategories.set(items.filter((item) => item.isActive)); this.feedbackCategoryId = this.feedbackCategoryId ?? items[0]?.id; }, error: (error) => this.handleError(error, 'Feedback categories could not be loaded.') }); }
   private loadSummaryTypes(): void { if (!this.isConnected() || this.summaryTypes().length) return; this.api.getSummaryTypes().subscribe({ next: (items) => { this.summaryTypes.set(items.filter((item) => item.isActive)); this.summaryTypeId = this.summaryTypeId ?? items[0]?.id; }, error: (error) => this.handleError(error, 'Summary types could not be loaded.') }); }
@@ -208,13 +215,13 @@ export class AiAssistantPageComponent {
   private getRoleProfile(roles: string[]): AssistantProfile {
     const profiles: Record<string, AssistantProfile> = {
       Customer: { role: 'Customer', intro: 'I am your insurance help agent. I can explain KYC, your policy coverage, premium payments, and how to submit or track a claim.', placeholder: 'Ask about KYC, your policy, premiums, or how to submit a claim...', starterPrompts: ['What is KYC and why do I need it?', 'How do I submit an insurance claim?', 'What documents do I need for KYC?'], views: ['command', 'history', 'feedback'] },
-      KycReviewer: { role: 'KycReviewer', intro: 'I can support your KYC review work with document-checking guidance, verification checklists, and clear next steps for incomplete submissions.', placeholder: 'Ask about KYC verification or an incomplete document...', starterPrompts: ['What checks are required before approving KYC?', 'How should I handle incomplete KYC documents?', 'What is needed for address proof verification?'], views: ['command', 'history', 'feedback'] },
+      KycReviewer: { role: 'KycReviewer', intro: 'I can support your KYC review work with document-checking guidance, verification checklists, and clear next steps for incomplete submissions.', placeholder: 'Ask about KYC verification or an incomplete document...', starterPrompts: ['What checks are required before approving KYC?', 'How should I handle incomplete KYC documents?', 'What is needed for address proof verification?'], views: ['command', 'history', 'feedback', 'kyc'] },
       PolicyUnderwriter: { role: 'PolicyUnderwriter', intro: 'I can help with underwriting context, AI policy recommendations, coverage summaries, and risk-focused review questions.', placeholder: 'Ask about coverage, policy terms, or underwriting risk...', starterPrompts: ['What factors should I review before underwriting a policy?', 'Summarize the key coverage and exclusion checks.', 'What customer information is needed for risk assessment?'], views: ['command', 'history', 'feedback'] },
       ClaimsAdjuster: { role: 'ClaimsAdjuster', intro: 'I can provide AI claim summaries, fraud warnings, confidence scores, and conservative settlement recommendations to support your claim decisions.', placeholder: 'Ask about claim evidence and settlement...', starterPrompts: ['What documents should I verify for this claim?', 'Summarize the claim facts and next assessment steps.', 'What fraud indicators should I check before settlement?'], views: ['command', 'history', 'feedback'] },
       PaymentOperations: { role: 'PaymentOperations', intro: 'I can help explain premium collection, payment status, settlement transactions, and refund workflows.', placeholder: 'Ask about a payment, premium schedule, refund, or settlement...', starterPrompts: ['How should I investigate a failed premium payment?', 'What should a payment reconciliation include?', 'What checks are needed before processing a refund?'], views: ['command', 'history', 'feedback'] },
       SupportAgent: { role: 'SupportAgent', intro: 'I can help you prepare clear customer responses about KYC, policies, claims, premium payments, and claim status.', placeholder: 'Ask how to explain a policy, claim, KYC, or payment process to a customer...', starterPrompts: ['Explain the claim submission process for a customer.', 'How do I explain KYC requirements clearly?', 'Summarize a policy status in customer-friendly language.'], views: ['command', 'history', 'feedback'] },
       ComplianceOfficer: { role: 'ComplianceOfficer', intro: 'I can support audit preparation, KYC control review, regulatory reporting context, AI fraud warnings, and compliance exception analysis.', placeholder: 'Ask about an audit control, KYC evidence, or compliance exception...', starterPrompts: ['What evidence should be retained for a KYC audit?', 'How should I review a compliance exception?', 'What fraud signals should be considered before settlement?'], views: ['command', 'history', 'feedback'] },
-      PlatformAdmin: { role: 'PlatformAdmin', intro: 'I can assist with platform-wide insurance operations, knowledge management, and service insights.', placeholder: 'Ask about platform operations, knowledge governance, or an insurance workflow...', starterPrompts: ['Explain the end-to-end insurance claim process.', 'What knowledge should be indexed for KYC reviewers?', 'How should fraud-review guidance be governed?'], views: ['command', 'history', 'feedback', 'knowledge', 'kyc', 'lookups'] }
+      PlatformAdmin: { role: 'PlatformAdmin', intro: 'I can assist with platform-wide insurance operations, knowledge management, and service insights.', placeholder: 'Search platform operations, service health, knowledge governance, or an insurance workflow...', starterPrompts: ['What platform services and health checks should I review today?', 'Which approved guidance should be indexed for each operational role?', 'What controls should govern fraud-review recommendations and exceptions?'], views: ['command', 'history', 'feedback', 'knowledge', 'lookups'] }
     };
     const roleOrder = ['PlatformAdmin', 'ComplianceOfficer', 'ClaimsAdjuster', 'PolicyUnderwriter', 'KycReviewer', 'PaymentOperations', 'SupportAgent', 'Customer'];
     return profiles[roleOrder.find((role) => roles.includes(role)) ?? 'Customer'];

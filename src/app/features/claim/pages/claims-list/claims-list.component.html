@@ -6,14 +6,13 @@
   </div>
   <div class="heading-actions">
     <button class="secondary-button" type="button" (click)="refreshClaims()" [disabled]="isLoading()">{{ isLoading() ? 'Loading...' : 'Refresh' }}</button>
-    @if (canCreateClaim) { <a class="primary-button" routerLink="/claims/new">New claim</a> }
+    @if (canCreateClaim) { <a class="primary-button" [routerLink]="newClaimRoute">New claim</a> }
   </div>
 </header>
 
 <div class="connection" [class.connection-live]="apiState() === 'connected'" [class.connection-error]="apiState() === 'error'">
   @if (apiState() === 'connected') { Live data from Claim Service API. }
-  @else if (apiState() === 'error') { The API requires a valid bearer token. Preview data remains available. }
-  @else { Preview data. Add an access token, then refresh to load the live queue. }
+  @else { Unable to load claims. Check your access and retry. }
 </div>
 
 <section class="metrics">
@@ -34,6 +33,6 @@
     </div>
   </div>
   <div class="table-wrap"><table><thead><tr><th>Claim</th><th>Type</th><th>Status</th><th>Priority</th><th>Incident</th><th class="amount">Claim amount</th><th class="amount">Settled</th></tr></thead>
-    <tbody>@for (claim of filteredClaims(); track claim.claimId) { <tr [routerLink]="['/claims', claim.claimId]"><td><strong>{{ claim.claimNumber }}</strong><span>Policy {{ claim.policyId }}</span></td><td>{{ claim.claimTypeName }}</td><td><span class="status-badge" [class]="badgeClass(claim.claimStatusName)">{{ claim.claimStatusName }}</span></td><td>{{ claim.priorityName }}</td><td>{{ claim.incidentDate | date:'dd MMM y' }}</td><td class="amount">{{ claim.claimAmount | currency:'USD':'symbol':'1.0-0' }}</td><td class="amount">{{ claim.settledAmount | currency:'USD':'symbol':'1.0-0' }}</td></tr> } @empty { <tr><td class="empty" colspan="7">No claims match this search or status filter.</td></tr> }</tbody>
+    <tbody>@for (claim of filteredClaims(); track claim.claimId) { <tr [routerLink]="[claimsRoute, claim.claimId]"><td><strong>{{ claim.claimNumber }}</strong><span>Policy {{ claim.policyId }}</span></td><td>{{ claim.claimTypeName }}</td><td><span class="status-badge" [class]="badgeClass(claim.claimStatusName)">{{ claim.claimStatusName }}</span></td><td>{{ claim.priorityName }}</td><td>{{ claim.incidentDate | date:'dd MMM y' }}</td><td class="amount">{{ claim.claimAmount | currency:'USD':'symbol':'1.0-0' }}</td><td class="amount">{{ claim.settledAmount | currency:'USD':'symbol':'1.0-0' }}</td></tr> } @empty { <tr><td class="empty" colspan="7">No claims match this search or status filter.</td></tr> }</tbody>
   </table></div>
 </section>

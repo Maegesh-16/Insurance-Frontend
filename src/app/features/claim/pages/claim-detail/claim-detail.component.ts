@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AuthService } from '../../../identity/services/auth.service';
 import { ClaimDetail } from '../../models/claim.models';
 import { ClaimApiService } from '../../services/claim-api.service';
 
@@ -14,8 +15,11 @@ type ClaimTab = 'overview' | 'documents' | 'assessments' | 'parties' | 'settleme
 })
 export class ClaimDetailComponent {
   private readonly claimsApi = inject(ClaimApiService);
+  private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly claimId = Number(this.route.snapshot.paramMap.get('claimId'));
+  private readonly roles = this.authService.getSession()?.roles ?? [];
+  protected readonly claimsRoute = this.roles.includes('ClaimsAdjuster') ? '/claims-adjuster/claims' : this.roles.includes('Customer') ? '/customer/claims' : this.roles.includes('ComplianceOfficer') ? '/compliance/claims' : '/claims';
   protected readonly claim = signal<ClaimDetail | null>(null);
   protected readonly isLoading = signal(false);
   protected readonly error = signal('');

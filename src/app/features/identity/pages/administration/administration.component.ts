@@ -28,7 +28,7 @@ export class AdministrationComponent {
   protected readonly creatingUser = signal(false);
   protected readonly createError = signal('');
   protected readonly createSuccess = signal('');
-  protected newUser: CreateUserRequest = this.blankUser();
+  protected newUser: CreateUserRequest & { confirmPassword: string } = this.blankUser();
 
   constructor() { this.load(); }
 
@@ -46,14 +46,21 @@ export class AdministrationComponent {
   }
 
   protected submitCreateUser(): void {
-    if (!this.newUser.email || !this.newUser.userName) { this.createError.set('Email and username are required.'); return; }
+    const email = this.newUser.email.trim();
+    const userName = this.newUser.userName.trim();
+    if (!email || !userName || !this.newUser.password) { this.createError.set('Email, username, and password are required.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { this.createError.set('Enter a valid email address.'); return; }
+    if (userName.length < 3) { this.createError.set('Username must be at least 3 characters.'); return; }
+    if (this.newUser.password.length < 8) { this.createError.set('Password must be at least 8 characters.'); return; }
+    if (this.newUser.password !== this.newUser.confirmPassword) { this.createError.set('Passwords do not match.'); return; }
     if (!this.newUser.roleIds.length) { this.createError.set('Assign at least one role.'); return; }
     this.creatingUser.set(true);
     this.createError.set('');
-    this.administrationService.createUser(this.newUser).subscribe({
+    const { confirmPassword: _, ...request } = this.newUser;
+    this.administrationService.createUser({ ...request, email, userName }).subscribe({
       next: (user) => {
         this.creatingUser.set(false);
-        this.createSuccess.set(`Invitation sent to ${user.userName}. They will set their own password.`);
+        this.createSuccess.set(`User ${user.userName} created successfully.`);
         this.newUser = this.blankUser();
         this.loadUsers();
         this.loadAudit();
@@ -138,12 +145,21 @@ export class AdministrationComponent {
     this.administrationService.getAudit().subscribe({ next: (entries) => this.auditEntries.set(entries), error: () => {} });
   }
 
-  private blankUser(): CreateUserRequest {
-    return { email: '', userName: '', roleIds: [] };
+  private blankUser(): CreateUserRequest & { confirmPassword: string } {
+    return { email: '', userName: '', password: '', confirmPassword: '', roleIds: [] };
   }
 
   private message(err: HttpErrorResponse): string {
     if (typeof err.error?.detail === 'string') return err.error.detail;
-    return err.status === 403 ? 'Your account does not have user-management permission.' : 'User management is unavailable until the updated Identity Service is deployed.';
+    if (typeof err.error?.title === 'string') return err.error.title;
+    if (typeof err.error === 'string' && err.error.trim()) return err.error;
+    if (err.error?.errors && typeof err.error.errors === 'object') {
+      const validationMessages = Object.values(err.error.errors).flat().filter((message): message is string => typeof message === 'string');
+      if (validationMessages.length) return validationMessages.join(' ');
+    }
+    if (err.status === 403) return 'Your account does not have user-management permission.';
+    if (err.status === 401) return 'Your session has expired. Sign in again and retry.';
+    if (err.status === 500) return 'Identity Service could not create the user. Check its Render logs for the server error.';
+    return 'User management request failed. Please try again.';
   }
 }

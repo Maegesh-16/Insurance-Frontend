@@ -81,7 +81,16 @@ export class AuthPageComponent {
       next: (response) => {
         this.authService.saveSession(response);
         this.isSubmitting.set(false);
-        this.router.navigateByUrl('/dashboard');
+        const destination = response.roles.includes('Customer')
+          ? '/customer/dashboard'
+          : response.roles.includes('PolicyUnderwriter')
+            ? '/underwriter/dashboard'
+            : response.roles.includes('ClaimsAdjuster')
+              ? '/claims-adjuster/dashboard'
+                : response.roles.includes('ComplianceOfficer')
+                  ? '/compliance/dashboard'
+                  : '/dashboard';
+        this.router.navigateByUrl(destination);
       },
       error: (error: HttpErrorResponse) => { this.apiError.set(this.getErrorMessage(error)); this.isSubmitting.set(false); }
     });

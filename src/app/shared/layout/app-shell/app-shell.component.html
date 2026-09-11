@@ -1,6 +1,6 @@
 <div class="shell">
   <aside class="shell-sidebar">
-    <a class="shell-brand" routerLink="/dashboard">
+    <a class="shell-brand" [routerLink]="homeRoute">
       <span class="shell-brand-mark">S</span>
       <span class="shell-brand-name">SureCover</span>
     </a>
@@ -30,6 +30,9 @@
       <p class="shell-header-title">Insurance Platform</p>
       <div class="shell-header-actions">
         <span class="shell-header-role">{{ session?.roles?.[0] ?? 'Member' }}</span>
+        @if (isComplianceOfficer) {
+          <a class="shell-header-role" routerLink="/compliance/profile">Profile</a>
+        }
       </div>
     </header>
 

@@ -13,6 +13,8 @@ export class AppShellComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   protected readonly session = this.authService.getSession();
+  protected readonly isComplianceOfficer = this.session?.roles.includes('ComplianceOfficer') ?? false;
+  protected readonly homeRoute = this.isComplianceOfficer ? '/compliance/dashboard' : '/dashboard';
   protected readonly navigationItems = NAVIGATION_ITEMS.filter((item) => this.canAccess(item));
 
   protected signOut(): void {

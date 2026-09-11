@@ -12,5 +12,5 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const allowedRoles = route.data['roles'] as readonly string[] | undefined;
   return !allowedRoles || allowedRoles.some((role) => session?.roles.includes(role))
     ? true
-    : router.createUrlTree(['/dashboard']);
+    : router.createUrlTree([session?.roles.includes('ComplianceOfficer') ? '/compliance/dashboard' : '/dashboard']);
 };
