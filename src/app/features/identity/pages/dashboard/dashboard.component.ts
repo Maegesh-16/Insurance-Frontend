@@ -243,7 +243,7 @@ export class DashboardComponent {
       },
       error: () => { this.dashboardError.set('Something went wrong while loading your account information. Please try again.'); this.policyCount.set(0); }
     });
-    this.claimApi.getClaims().subscribe({
+    this.claimApi.getMyClaims().subscribe({
       next: (claims) => this.claimCount.set(claims.filter((claim) => !['Rejected', 'Settled', 'Closed'].includes(claim.claimStatusName)).length),
       error: () => this.claimCount.set(null)
     });

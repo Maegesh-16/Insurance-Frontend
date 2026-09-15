@@ -40,7 +40,7 @@ export class ClaimsListComponent {
 
   protected refreshClaims(): void {
     this.isLoading.set(true);
-    this.claimsApi.getClaims().subscribe({
+    (this.canCreateClaim ? this.claimsApi.getMyClaims() : this.claimsApi.getClaims()).subscribe({
       next: (claims) => { this.claims.set(claims); this.apiState.set('connected'); this.isLoading.set(false); },
       error: () => { this.apiState.set('error'); this.isLoading.set(false); }
     });

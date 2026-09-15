@@ -8,6 +8,7 @@ export class ClaimApiService {
   private readonly api = '/claim-api/api';
 
   getClaims() { return this.http.get<ClaimSummary[]>(`${this.api}/claims`); }
+  getMyClaims() { return this.http.get<ClaimSummary[]>(`${this.api}/claims/mine`); }
   getClaim(claimId: number) { return this.http.get<ClaimDetail>(`${this.api}/claims/${claimId}`); }
   createClaim(request: CreateClaimRequest) { return this.http.post<ClaimDetail>(`${this.api}/claims`, request); }
   getClaimTypes() { return this.http.get<ClaimLookup[]>(`${this.api}/claim-lookups/types`); }
