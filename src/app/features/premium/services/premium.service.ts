@@ -3,12 +3,6 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CreatePremiumPlanRequest, PremiumCalculation, PremiumDiscount, PremiumHistory, PremiumPlan, PremiumSchedule } from '../models/premium.models';
 
-export interface CreatePremiumPlanRequest {
-  policyTypeId: string;
-  frequency: string;
-  basePremium: number;
-}
-
 @Injectable({ providedIn: 'root' })
 export class PremiumService {
   private readonly http = inject(HttpClient);

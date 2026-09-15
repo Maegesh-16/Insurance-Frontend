@@ -36,8 +36,8 @@
     "pathRewrite": { "^/premium-api": "" }
   },
   "/payment-api": {
-    "target": "http://localhost:5169",
-    "secure": false,
+    "target": "https://paymentservice-zfth.onrender.com",
+    "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/payment-api": "" }
   },

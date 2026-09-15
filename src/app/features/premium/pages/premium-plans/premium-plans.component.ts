@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { timeout } from 'rxjs';
-import { PremiumPlan } from '../../models/premium.models';
-import { CreatePremiumPlanRequest, PremiumService } from '../../services/premium.service';
+import { CreatePremiumPlanRequest, PremiumPlan } from '../../models/premium.models';
+import { PremiumService } from '../../services/premium.service';
 import { PolicyService } from '../../../policy/services/policy.service';
 import { PolicyType } from '../../../policy/models/policy.models';
 
