@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LucideBell } from '@lucide/angular';
 import { ClaimApiService } from '../../../claim/services/claim-api.service';
 import { ClaimSummary } from '../../../claim/models/claim.models';
 import { PolicyResponse } from '../../../policy/models/policy.models';
@@ -21,7 +22,7 @@ interface DashboardCard {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CurrencyPipe, DatePipe, RouterLink],
+  imports: [CurrencyPipe, DatePipe, LucideBell, RouterLink],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent {
@@ -52,8 +53,7 @@ export class DashboardComponent {
     { label: 'My Policies', detail: 'Browse policy types, view active policies, coverage, and policy history.', route: '/policies', action: 'Open policies' },
     { label: 'My Claims', detail: 'Submit a claim, upload documents, and track your claim status and settlement.', route: '/claims', action: 'Open claims' },
     { label: 'Premiums', detail: 'Review your premium calculation, installment schedule, and payment history.', route: '/premiums', action: 'View premiums' },
-    { label: 'Notifications', detail: 'View your email, SMS, and push notification history.', route: '/notifications', action: 'View notifications' },
-    { label: 'AI Assistant', detail: 'Get help with your policy, claim status, coverage questions, and more.', route: '/ai-assistant', action: 'Open AI assistant' }
+    { label: 'AI Assistant', detail: 'Get help with your policy, claim status, coverage questions, and more.', route: '/customer/assistant', action: 'Open AI assistant' }
   ];
 
   protected readonly operationsCards = this.getOperationsCards();
@@ -62,6 +62,7 @@ export class DashboardComponent {
   protected readonly dashboardError = signal('');
   protected readonly policyCount = signal<number | null>(null);
   protected readonly customer = signal<CustomerResponse | null>(null);
+  protected readonly kycApprovedNotification = signal(false);
   protected readonly customerPolicies = signal<PolicyResponse[]>([]);
   protected readonly premiumSchedules = signal<PremiumSchedule[]>([]);
   protected readonly claimCount = signal<number | null>(null);
@@ -129,16 +130,13 @@ export class DashboardComponent {
         { label: 'Customer details', detail: 'View the customer information required for an underwriting decision.', route: '/policies', action: 'Open applications' },
         { label: 'KYC details', detail: 'Review KYC status as read-only underwriting context.', route: '/policies', action: 'Open applications' },
         { label: 'Policy details', detail: 'Review policy type, coverage, sum insured, and policy history.', route: '/policies', action: 'Open policies' },
-        { label: 'Coverage and premium', detail: 'Review coverage limits, deductibles, premium calculation, and discounts.', route: '/policies', action: 'Open policies' },
-        { label: 'AI recommendations', detail: 'View AI policy recommendations as decision support during underwriting review.', route: '/ai-assistant', action: 'Open AI assistant' }
+        { label: 'Coverage and premium', detail: 'Review coverage limits, deductibles, premium calculation, and discounts.', route: '/policies', action: 'Open policies' }
       ],
       ClaimsAdjuster: [
         { label: 'New claims', detail: 'Review newly submitted claims and incident details.', route: '/claims', action: 'Open claims' },
         { label: 'Claims under review', detail: 'Continue active claim investigations and verification work.', route: '/claims', action: 'Open claims' },
         { label: 'Documents pending', detail: 'Find claims that require document review or additional documents.', route: '/claims', action: 'Open claims' },
         { label: 'Verification pending', detail: 'Review claims awaiting verification remarks and status changes.', route: '/claims', action: 'Open claims' },
-        { label: 'Fraud alerts', detail: 'Review AI fraud warnings and risk indicators.', route: '/ai-assistant/review', action: 'Open AI review' },
-        { label: 'AI recommendations', detail: 'Review AI claim summaries, confidence scores, and settlement recommendations.', route: '/ai-assistant/review', action: 'Open AI review' },
         { label: 'Settlement pending', detail: 'Review recommended settlement amounts and forward approved settlements for payment.', route: '/claims', action: 'Open claims' },
         { label: 'Approved claims', detail: 'View approved claims and settlement progress.', route: '/claims', action: 'Open claims' },
         { label: 'Rejected claims', detail: 'Review rejected claim decisions and recorded remarks.', route: '/claims', action: 'Open claims' },
@@ -174,7 +172,6 @@ export class DashboardComponent {
         { label: 'KYC monitoring', detail: 'Monitor KYC status and history without making KYC decisions.' },
         { label: 'Policy monitoring', detail: 'Review policy lifecycle and policy history.' },
         { label: 'Claim monitoring', detail: 'View claims, decisions, documents, and status history.', route: '/claims', action: 'Open claims' },
-        { label: 'Fraud alerts', detail: 'View AI fraud warnings and risk indicators.', route: '/ai-assistant/review', action: 'Open AI review' },
         { label: 'Payment monitoring', detail: 'Review payment and transaction activity.' },
         { label: 'Refund monitoring', detail: 'Review refund decisions and status history.' },
         { label: 'Audit logs', detail: 'Review audit records and approval or rejection activity.' },
@@ -226,6 +223,7 @@ export class DashboardComponent {
           return;
         }
         this.customer.set(customer);
+        this.kycApprovedNotification.set(customer.kyc?.status === 2);
         localStorage.setItem('insurance.customer', JSON.stringify(customer));
         this.policyService.getMine(customer.id).subscribe({
           next: (policies) => {

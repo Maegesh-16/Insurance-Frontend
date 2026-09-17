@@ -14,6 +14,14 @@
     }
   </div>
 
+  @if (kycApproved()) {
+    <section class="mt-6 border-l-4 border-emerald-600 bg-emerald-50 px-5 py-4">
+      <p class="text-sm font-bold text-emerald-950">KYC verification approved</p>
+      <p class="mt-1 text-sm text-emerald-900/70">Your identity verification is complete. You can now submit a policy application.</p>
+      <a routerLink="/customer/insurance-products" class="mt-3 inline-block text-sm font-bold text-emerald-800 underline underline-offset-4">Browse insurance products</a>
+    </section>
+  }
+
   @if (error()) {
     <div role="alert" class="mt-6 border-l-4 border-red-600 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{{ error() }}</div>
   } @else if (isLoading()) {

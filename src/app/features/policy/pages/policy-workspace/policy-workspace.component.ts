@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CustomerResponse } from '../../../customer/models/customer.models';
 import { CreatePolicyRequest, PolicyResponse, PolicyType } from '../../models/policy.models';
 import { PolicyService } from '../../services/policy.service';
@@ -14,15 +15,21 @@ import { UpdatePolicyRequest } from '../../models/policy.models';
 })
 export class PolicyWorkspaceComponent {
   private readonly formBuilder = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly policyService = inject(PolicyService);
   protected readonly policyTypes = signal<PolicyType[]>([]);
+  protected readonly availablePolicyTypes = computed(() => this.policyTypes().filter((policyType) => policyType.isAvailable !== false));
   protected readonly isLoadingTypes = signal(true);
   protected readonly policies = signal<PolicyResponse[]>([]);
+  protected readonly applications = computed(() => this.policies().filter((policy) => [1, 2].includes(policy.status)));
+  protected readonly activePolicies = computed(() => this.policies().filter((policy) => policy.status === 3));
   protected readonly isSubmitting = signal(false);
   protected readonly error = signal('');
   protected readonly savedPolicy = signal<PolicyResponse | null>(null);
   protected readonly lastSaveWasUpdate = signal(false);
   protected readonly editingPolicyId = signal<string | null>(null);
+  protected readonly view = (this.route.snapshot.data['view'] as 'products' | 'applications' | 'policies' | undefined) ?? 'products';
   protected readonly customer = this.getStoredCustomer();
   protected readonly selectedPolicyTypeId = signal('');
   protected readonly selectedPolicyType = computed(() => this.policyTypes().find((item) => item.id === this.selectedPolicyTypeId()) ?? null);
@@ -39,10 +46,8 @@ export class PolicyWorkspaceComponent {
 
   constructor() {
     if (!this.customer) this.error.set('Complete your profile before creating a policy.');
-    this.policyService.getTypes().subscribe({
-      next: (types) => { this.policyTypes.set(types); this.isLoadingTypes.set(false); },
-      error: (error: HttpErrorResponse) => { this.error.set(this.getErrorMessage(error)); this.isLoadingTypes.set(false); }
-    });
+    if (this.view === 'products') this.loadPolicyTypes();
+    else this.isLoadingTypes.set(false);
     if (this.customer) this.policyService.getMine(this.customer.id).subscribe({
       next: (policies) => this.policies.set(policies),
       error: (error: HttpErrorResponse) => this.error.set(this.getErrorMessage(error))
@@ -54,11 +59,24 @@ export class PolicyWorkspaceComponent {
     this.selectedPolicyTypeId.set(policyType.id);
     const coverageDefaults = this.getCoverageDefaults(policyType.code);
     this.form.patchValue(coverageDefaults);
+    this.scrollToApplicationForm();
+  }
+
+  protected policyBenefits(policyType: PolicyType): string[] {
+    if (policyType.benefits?.length) return policyType.benefits;
+    return ({
+      AUTO_COMPREHENSIVE: ['Accidental damage cover', 'Theft and fire protection', 'Third-party liability cover'],
+      HEALTH_STANDARD: ['In-patient hospitalisation', 'Pre- and post-hospitalisation expenses', 'Cashless treatment network'],
+      LIFE_PROTECT: ['Life cover for your nominee', 'Long-term financial protection', 'Flexible premium payment options'],
+    } as Record<string, string[]>)[policyType.code] ?? ['Coverage tailored to your selected policy terms'];
   }
 
   protected editDraft(policy: PolicyResponse): void {
     const coverage = policy.coverages[0];
     if (policy.status !== 1 || !coverage) return;
+    const scrollToForm = () => this.scrollToApplicationForm();
+    if (this.policyTypes().length === 0) this.loadPolicyTypes(scrollToForm);
+    else scrollToForm();
     this.error.set('');
     this.savedPolicy.set(null);
     this.editingPolicyId.set(policy.id);
@@ -74,6 +92,12 @@ export class PolicyWorkspaceComponent {
       remarks: policy.remarks ?? ''
     });
   }
+
+  protected checkout(policyId: string): void {
+    void this.router.navigate(['/customer/checkout', policyId]);
+  }
+
+  protected openClaims(): void { void this.router.navigate(['/customer/claims/new']); }
 
   protected submit(): void {
     if (!this.customer || this.form.invalid) { this.form.markAllAsTouched(); return; }
@@ -106,6 +130,7 @@ export class PolicyWorkspaceComponent {
         this.policies.update((policies) => editingPolicyId ? policies.map((item) => item.id === policy.id ? policy : item) : [policy, ...policies]);
         this.editingPolicyId.set(null);
         this.isSubmitting.set(false);
+        if (!editingPolicyId) void this.router.navigate(['/customer/applications']);
       },
       error: (error: HttpErrorResponse) => { this.error.set(this.getErrorMessage(error)); this.isSubmitting.set(false); }
     });
@@ -116,6 +141,18 @@ export class PolicyWorkspaceComponent {
   }
 
   private toDateInput(value: Date): string { return value.toISOString().slice(0, 10); }
+
+  private loadPolicyTypes(afterLoad?: () => void): void {
+    this.isLoadingTypes.set(true);
+    this.policyService.getTypes().subscribe({
+      next: (types) => { this.policyTypes.set(types); this.isLoadingTypes.set(false); afterLoad?.(); },
+      error: (error: HttpErrorResponse) => { this.error.set(this.getErrorMessage(error)); this.isLoadingTypes.set(false); }
+    });
+  }
+
+  private scrollToApplicationForm(): void {
+    setTimeout(() => document.getElementById('policy-application-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
 
   private getCoverageDefaults(policyTypeCode: string): Pick<{ coverageName: string; coverageDescription: string; sumInsured: number; deductible: number }, 'coverageName' | 'coverageDescription' | 'sumInsured' | 'deductible'> {
     return ({

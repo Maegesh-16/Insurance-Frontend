@@ -2,13 +2,14 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { LucideFilePlus2, LucideRefreshCw, LucideSearch } from '@lucide/angular';
 import { AuthService } from '../../../identity/services/auth.service';
 import { ClaimSummary } from '../../models/claim.models';
 import { ClaimApiService } from '../../services/claim-api.service';
 
 @Component({
   selector: 'app-claims-list',
-  imports: [CurrencyPipe, DatePipe, FormsModule, RouterLink],
+  imports: [CurrencyPipe, DatePipe, FormsModule, LucideFilePlus2, LucideRefreshCw, LucideSearch, RouterLink],
   templateUrl: './claims-list.component.html',
   styleUrl: '../claim-workspace.scss'
 })

@@ -8,8 +8,8 @@ export interface ClaimLookup {
 export interface ClaimSummary {
   claimId: number;
   claimNumber: string;
-  policyId: number;
-  customerId: number;
+  policyId: string;
+  customerId: string;
   claimTypeId: number;
   claimTypeName: string;
   claimStatusId: number;
@@ -83,8 +83,8 @@ export interface ClaimActionHistory {
 }
 
 export interface CreateClaimRequest {
-  policyId: number;
-  customerId: number;
+  policyId: string;
+  customerId: string;
   claimNumber: string;
   claimTypeId: number;
   claimStatusId: number;
