@@ -22,7 +22,6 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { label: 'Dashboard', route: '/underwriter/dashboard', roles: ['PolicyUnderwriter'], exact: true },
   { label: 'Policy Applications', route: '/underwriter/applications', roles: ['PolicyUnderwriter'] },
   { label: 'Issued Policies', route: '/underwriter/policies', roles: ['PolicyUnderwriter'] },
-  { label: 'Notifications', route: '/underwriter/notifications', roles: ['PolicyUnderwriter'] },
   { label: 'Dashboard', route: '/claims-adjuster/dashboard', roles: ['ClaimsAdjuster'], exact: true },
   { label: 'Claims', route: '/claims-adjuster/claims', roles: ['ClaimsAdjuster'] },
   { label: 'Notifications', route: '/claims-adjuster/notifications', roles: ['ClaimsAdjuster'] },

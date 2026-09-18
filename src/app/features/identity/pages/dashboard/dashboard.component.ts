@@ -1,10 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { switchMap, timer } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ClaimApiService } from '../../../claim/services/claim-api.service';
 import { ClaimSummary } from '../../../claim/models/claim.models';
-import { PolicyResponse } from '../../../policy/models/policy.models';
+import { PolicyResponse, PolicyType } from '../../../policy/models/policy.models';
 import { AuthService } from '../../services/auth.service';
 import { CustomerService } from '../../../customer/services/customer.service';
 import { PolicyService } from '../../../policy/services/policy.service';
@@ -16,6 +18,7 @@ interface DashboardCard {
   label: string;
   detail: string;
   route?: string;
+  queryParams?: Record<string, string>;
   action?: string;
 }
 
@@ -26,6 +29,7 @@ interface DashboardCard {
 })
 export class DashboardComponent {
   private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
   private readonly customerService = inject(CustomerService);
   private readonly policyService = inject(PolicyService);
@@ -63,6 +67,7 @@ export class DashboardComponent {
   protected readonly policyCount = signal<number | null>(null);
   protected readonly customer = signal<CustomerResponse | null>(null);
   protected readonly customerPolicies = signal<PolicyResponse[]>([]);
+  protected readonly policyTypes = signal<PolicyType[]>([]);
   protected readonly premiumSchedules = signal<PremiumSchedule[]>([]);
   protected readonly claimCount = signal<number | null>(null);
   protected readonly underwriterPolicies = signal<PolicyResponse[]>([]);
@@ -110,15 +115,15 @@ export class DashboardComponent {
   private getOperationsCards(): DashboardCard[] {
     const roleCards: Record<string, DashboardCard[]> = {
       KycReviewer: [
-        { label: 'Pending KYC', detail: 'Review KYC cases awaiting an initial decision.', route: '/kyc-review', action: 'Open KYC queue' },
-        { label: 'Under review', detail: 'Continue reviews that require document and identity verification.', route: '/kyc-review', action: 'Open KYC queue' },
-        { label: 'Approved KYC', detail: 'View verified customer KYC decisions and remarks.', route: '/kyc-review', action: 'Open KYC queue' },
-        { label: 'Rejected KYC', detail: 'Review rejected cases and their recorded rejection reasons.', route: '/kyc-review', action: 'Open KYC queue' },
-        { label: 'Resubmission required', detail: 'Track cases awaiting corrected or additional KYC documents.', route: '/kyc-review', action: 'Open KYC queue' },
-        { label: 'Customer search', detail: 'Find customers and view permitted profile, address, and nominee details.' },
+        { label: 'Pending KYC', detail: 'Review KYC cases awaiting an initial decision.', route: '/kyc-review', queryParams: { status: 'PendingReview' }, action: 'Open pending cases' },
+        { label: 'Under review', detail: 'Continue reviews that require document and identity verification.', route: '/kyc-review', queryParams: { status: 'PendingReview' }, action: 'Open pending cases' },
+        { label: 'Approved KYC', detail: 'View verified customer KYC decisions and remarks.', route: '/kyc-review', queryParams: { status: 'Verified' }, action: 'Open approved cases' },
+        { label: 'Rejected KYC', detail: 'Review rejected cases and their recorded rejection reasons.', route: '/kyc-review', queryParams: { status: 'Rejected' }, action: 'Open rejected cases' },
+        { label: 'Resubmission required', detail: 'Track cases awaiting corrected or additional KYC documents.', route: '/kyc-review', queryParams: { status: 'ReverificationRequired' }, action: 'Open resubmissions' },
+        { label: 'Customer search', detail: 'Find customers and view permitted profile, address, and nominee details.', route: '/customer-search', action: 'Open customer search' },
         { label: 'KYC documents', detail: 'View submitted KYC documents in the protected review queue.', route: '/kyc-review', action: 'Open KYC queue' },
-        { label: 'KYC history', detail: 'View prior KYC decisions, reviewer remarks, and status changes.' },
-        { label: 'KYC reports', detail: 'Review KYC activity and decision trends.' }
+        { label: 'KYC history', detail: 'View prior KYC decisions, reviewer remarks, and status changes.', route: '/kyc-history', action: 'Open KYC history' },
+        { label: 'KYC reports', detail: 'Review KYC activity and decision trends.', route: '/kyc-reports', action: 'Open KYC reports' }
       ],
       PolicyUnderwriter: [
         { label: 'New applications', detail: 'Review newly submitted policy applications.', route: '/policies', action: 'Open applications' },
@@ -219,6 +224,10 @@ export class DashboardComponent {
   }
 
   private loadCustomerDashboard(): void {
+    this.policyService.getTypes().subscribe({
+      next: (policyTypes) => this.policyTypes.set(policyTypes),
+      error: () => this.policyTypes.set([])
+    });
     this.customerService.getCurrent().subscribe({
       next: (customer) => {
         if (!customer) {
@@ -250,7 +259,10 @@ export class DashboardComponent {
   }
 
   private loadUnderwriterDashboard(): void {
-    this.policyService.getAll().subscribe({
+    timer(0, 30000).pipe(
+      switchMap(() => this.policyService.getAll()),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (policies) => this.underwriterPolicies.set(policies),
       error: () => this.dashboardError.set('Something went wrong while loading the underwriting queue. Please try again.')
     });
