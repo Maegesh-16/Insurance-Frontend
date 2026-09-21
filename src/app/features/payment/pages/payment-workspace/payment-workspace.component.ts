@@ -4,7 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PolicyResponse } from '../../../policy/models/policy.models';
 import { PolicyService } from '../../../policy/services/policy.service';
-import { Payment } from '../../models/payment.models';
+import { CreatePaymentRequest, Payment } from '../../models/payment.models';
 import { PaymentService } from '../../services/payment.service';
 
 @Component({
@@ -15,6 +15,7 @@ import { PaymentService } from '../../services/payment.service';
 export class PaymentWorkspaceComponent {
   private readonly policyService = inject(PolicyService);
   private readonly paymentService = inject(PaymentService);
+  private paymentAttempt: { request: CreatePaymentRequest; idempotencyKey: string } | null = null;
   protected readonly policies = signal<PolicyResponse[]>([]);
   protected readonly payments = signal<Payment[]>([]);
   protected readonly selectedPolicyId = signal('');
@@ -27,9 +28,15 @@ export class PaymentWorkspaceComponent {
   constructor() { this.loadPolicies(); }
 
   protected selectPolicy(policyId: string): void {
+    this.paymentAttempt = null;
     this.selectedPolicyId.set(policyId);
     this.payments.set([]);
     if (policyId) this.loadPayments();
+  }
+
+  protected updateAmount(amount: string | number): void {
+    this.paymentAttempt = null;
+    this.amount.set(amount === '' ? null : Number(amount));
   }
 
   protected recordPayment(): void {
@@ -37,11 +44,16 @@ export class PaymentWorkspaceComponent {
     const amount = this.amount();
     if (!policyId || !amount || amount <= 0) return;
 
+    const paymentAttempt = this.paymentAttempt ??= {
+      request: { policyId, amount, method: 'Standard', status: 'Completed', paymentDate: new Date().toISOString() },
+      idempotencyKey: crypto.randomUUID()
+    };
     this.isSaving.set(true);
     this.error.set('');
     this.success.set('');
-    this.paymentService.createPayment({ policyId, amount, method: 'Standard', status: 'Completed', paymentDate: new Date().toISOString() }).subscribe({
+    this.paymentService.createPayment(paymentAttempt.request, paymentAttempt.idempotencyKey).subscribe({
       next: (payment) => {
+      this.paymentAttempt = null;
         this.payments.update((payments) => [payment, ...payments]);
         this.amount.set(null);
         this.isSaving.set(false);
@@ -66,9 +78,10 @@ export class PaymentWorkspaceComponent {
       }
       this.policyService.getMine(customer.id).subscribe({
         next: (policies) => {
-          this.policies.set(policies);
+          const activePolicies = policies.filter((policy) => policy.status === 3);
+          this.policies.set(activePolicies);
           this.isLoading.set(false);
-          if (policies[0]) this.selectPolicy(policies[0].id);
+          if (activePolicies[0]) this.selectPolicy(activePolicies[0].id);
         },
         error: (error: HttpErrorResponse) => this.handleError(error)
       });

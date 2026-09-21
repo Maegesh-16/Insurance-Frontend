@@ -5,11 +5,15 @@
       <h1 class="font-serif text-4xl leading-tight sm:text-5xl">Premium plans</h1>
       <p class="mt-3 max-w-2xl text-base leading-7 text-emerald-900/65">View and add premium plans that define the base rate for each policy type and payment frequency.</p>
     </div>
-    <button class="mt-2 shrink-0 border border-emerald-800 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900" type="button" (click)="openForm()">+ Add plan</button>
+    <div class="mt-2 flex shrink-0 flex-wrap justify-end gap-2">
+      <button class="border border-emerald-800 px-4 py-2 text-sm font-semibold text-emerald-800" type="button" (click)="createMissingPlans()">{{ isCreatingMissing() ? 'Creating...' : 'Create missing plans (' + missingPlans().length + ')' }}</button>
+      <button class="border border-emerald-800 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900" type="button" (click)="openForm()">+ Add plan</button>
+    </div>
   </div>
 
   @if (error()) { <p class="mt-6 border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error() }}</p> }
   @if (saveSuccess()) { <p class="mt-6 border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ saveSuccess() }}</p> }
+  @if (!isLoading() && policyTypes().length) { <p class="mt-5 text-sm text-emerald-900/65"><strong>{{ completeProductCount() }} of {{ policyTypes().length }}</strong> policy products have all four payment frequencies configured.</p> }
 
   @if (isLoading()) {
     <p class="mt-8 text-sm text-emerald-900/65">Loading premium plans...</p>
@@ -26,9 +30,9 @@
         <tbody>
           @for (plan of plans(); track plan.planId) {
             <tr class="border-b border-emerald-950/10 last:border-0">
-              <td class="px-4 py-3 font-semibold">{{ policyTypeName(plan.policyTypeId) }}</td>
-              <td class="px-4 py-3">{{ plan.frequency | titlecase }}</td>
-              <td class="px-4 py-3 text-right font-semibold">{{ plan.basePremium | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td class="px-4 py-3 font-semibold">{{ policyTypeName(plan.policyTypeId) }}<span class="mt-1 block font-mono text-xs font-normal text-emerald-900/55">{{ plan.policyTypeId }}</span></td>
+              <td class="px-4 py-3">{{ frequencyLabel(plan.frequency) }}</td>
+              <td class="px-4 py-3 text-right font-semibold">{{ plan.basePremium | currency:'INR':'symbol-narrow':'1.2-2' }}</td>
             </tr>
           } @empty {
             <tr><td colspan="3" class="px-4 py-6 text-center text-emerald-900/65">No premium plans have been added yet.</td></tr>
@@ -49,20 +53,20 @@
       <div class="mt-5 grid gap-4">
         <label class="grid gap-1 text-sm font-semibold">
           Policy type
-          <select class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" [(ngModel)]="newPlan.policyTypeId">
+          <select class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" [ngModel]="newPlan.policyTypeId" (ngModelChange)="selectPolicyType($event)">
             <option value="">Select policy type</option>
             @for (type of policyTypes(); track type.id) { <option [value]="type.id">{{ type.name }}</option> }
           </select>
         </label>
         <label class="grid gap-1 text-sm font-semibold">
           Frequency
-          <select class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" [(ngModel)]="newPlan.frequency">
+          <select class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" [ngModel]="newPlan.frequency" (ngModelChange)="selectFrequency($event)">
             <option value="">Select frequency</option>
-            @for (freq of FREQUENCIES; track freq) { <option [value]="freq">{{ freq }}</option> }
+            @for (frequency of frequencies; track frequency.value) { <option [value]="frequency.value">{{ frequency.label }}</option> }
           </select>
         </label>
         <label class="grid gap-1 text-sm font-semibold">
-          Base premium (USD)
+          Installment premium (INR)
           <input class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" type="number" min="1" step="0.01" [(ngModel)]="newPlan.basePremium">
         </label>
       </div>
