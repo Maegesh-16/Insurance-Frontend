@@ -133,16 +133,16 @@ export class DashboardComponent {
         { label: 'AI recommendations', detail: 'View AI policy recommendations as decision support during underwriting review.', route: '/ai-assistant', action: 'Open AI assistant' }
       ],
       ClaimsAdjuster: [
-        { label: 'New claims', detail: 'Review newly submitted claims and incident details.', route: '/claims', action: 'Open claims' },
-        { label: 'Claims under review', detail: 'Continue active claim investigations and verification work.', route: '/claims', action: 'Open claims' },
-        { label: 'Documents pending', detail: 'Find claims that require document review or additional documents.', route: '/claims', action: 'Open claims' },
-        { label: 'Verification pending', detail: 'Review claims awaiting verification remarks and status changes.', route: '/claims', action: 'Open claims' },
+        { label: 'New claims', detail: 'Review newly submitted claims and incident details.', route: '/claims-adjuster/claims', action: 'Open claims' },
+        { label: 'Claims under review', detail: 'Continue active claim investigations and verification work.', route: '/claims-adjuster/claims', action: 'Open claims' },
+        { label: 'Documents pending', detail: 'Find claims that require document review or additional documents.', route: '/claims-adjuster/claims', action: 'Open claims' },
+        { label: 'Verification pending', detail: 'Review claims awaiting verification remarks and status changes.', route: '/claims-adjuster/claims', action: 'Open claims' },
         { label: 'Fraud alerts', detail: 'Review AI fraud warnings and risk indicators.', route: '/ai-assistant/review', action: 'Open AI review' },
         { label: 'AI recommendations', detail: 'Review AI claim summaries, confidence scores, and settlement recommendations.', route: '/ai-assistant/review', action: 'Open AI review' },
-        { label: 'Settlement pending', detail: 'Review recommended settlement amounts and forward approved settlements for payment.', route: '/claims', action: 'Open claims' },
-        { label: 'Approved claims', detail: 'View approved claims and settlement progress.', route: '/claims', action: 'Open claims' },
-        { label: 'Rejected claims', detail: 'Review rejected claim decisions and recorded remarks.', route: '/claims', action: 'Open claims' },
-        { label: 'Claim history', detail: 'View claim status and decision history.', route: '/claims', action: 'Open claims' },
+        { label: 'Settlement pending', detail: 'Review recommended settlement amounts and forward approved settlements for payment.', route: '/claims-adjuster/claims', action: 'Open claims' },
+        { label: 'Approved claims', detail: 'View approved claims and settlement progress.', route: '/claims-adjuster/claims', action: 'Open claims' },
+        { label: 'Rejected claims', detail: 'Review rejected claim decisions and recorded remarks.', route: '/claims-adjuster/claims', action: 'Open claims' },
+        { label: 'Claim history', detail: 'View claim status and decision history.', route: '/claims-adjuster/claims', action: 'Open claims' },
         { label: 'Claim reports', detail: 'Review claim reporting for operational analysis.', route: '/reporting', action: 'Open reporting' }
       ],
       PaymentOperations: [
