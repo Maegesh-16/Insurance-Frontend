@@ -1,6 +1,9 @@
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { CustomerService } from '../../../customer/services/customer.service';
+import { AuthService } from '../../../identity/services/auth.service';
 import { NotificationChannel, NotificationHistoryItem } from '../../models/notification.models';
 import { NotificationService } from '../../services/notification.service';
 
@@ -8,12 +11,15 @@ type NotificationFilter = NotificationChannel | 'all';
 
 @Component({
   selector: 'app-notification-history',
-  imports: [DatePipe, TitleCasePipe],
+  imports: [DatePipe, RouterLink, TitleCasePipe],
   templateUrl: './notification-history.component.html'
 })
 export class NotificationHistoryComponent {
   private readonly notificationService = inject(NotificationService);
+  private readonly customerService = inject(CustomerService);
+  private readonly authService = inject(AuthService);
   protected readonly notifications = signal<NotificationHistoryItem[]>([]);
+  protected readonly kycApproved = signal(false);
   protected readonly selectedFilter = signal<NotificationFilter>('all');
   protected readonly isLoading = signal(true);
   protected readonly error = signal('');
@@ -21,6 +27,7 @@ export class NotificationHistoryComponent {
 
   constructor() {
     this.loadHistory();
+    if (this.authService.getSession()?.roles.includes('Customer')) this.loadKycApproval();
   }
 
   protected selectFilter(filter: NotificationFilter): void {
@@ -50,6 +57,13 @@ export class NotificationHistoryComponent {
     if (normalizedStatus === 'sent') return 'border-emerald-200 bg-emerald-50 text-emerald-800';
     if (normalizedStatus === 'failed') return 'border-red-200 bg-red-50 text-red-800';
     return 'border-amber-200 bg-amber-50 text-amber-900';
+  }
+
+  private loadKycApproval(): void {
+    this.customerService.getCurrent().subscribe({
+      next: (customer) => this.kycApproved.set(customer?.kyc?.status === 2),
+      error: () => undefined
+    });
   }
 
   private getErrorMessage(error: HttpErrorResponse): string {

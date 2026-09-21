@@ -15,9 +15,7 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { label: 'Insurance Products', route: '/customer/insurance-products', roles: ['Customer'] },
   { label: 'My Applications', route: '/customer/applications', roles: ['Customer'] },
   { label: 'My Policies', route: '/customer/policies', roles: ['Customer'] },
-  { label: 'Payments', route: '/customer/payments', roles: ['Customer'] },
   { label: 'My Claims', route: '/customer/claims', roles: ['Customer'] },
-  { label: 'Notifications', route: '/customer/notifications', roles: ['Customer'] },
   { label: 'AI assistant', route: '/customer/assistant', roles: ['Customer'] },
   { label: 'Dashboard', route: '/underwriter/dashboard', roles: ['PolicyUnderwriter'], exact: true },
   { label: 'Policy Applications', route: '/underwriter/applications', roles: ['PolicyUnderwriter'] },
@@ -38,8 +36,6 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { label: 'Policies', route: '/policies', roles: ['SupportAgent'] },
   { label: 'KYC approval', route: '/kyc-review', roles: ['KycReviewer'] },
   { label: 'Claims', route: '/claims', roles: ['SupportAgent'] },
-  { label: 'Payments', route: '/payments', roles: ['Customer'] },
   { label: 'Payments', roles: ['PaymentOperations', 'SupportAgent'], disabled: true },
-  { label: 'Reporting', route: '/reporting', roles: ['ClaimsAdjuster', 'PaymentOperations'] },
-  { label: 'AI assistant', route: '/ai-assistant', roles: ['PolicyUnderwriter', 'ClaimsAdjuster', 'PlatformAdmin'] }
+  { label: 'Reporting', route: '/reporting', roles: ['ClaimsAdjuster', 'PaymentOperations'] }
 ];

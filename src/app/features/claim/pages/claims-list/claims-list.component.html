@@ -1,3 +1,43 @@
+@if (canCreateClaim) {
+  <section class="customer-claims-page">
+    <header class="customer-claims-header">
+      <div>
+        <p class="eyebrow">Claims</p>
+        <h1>My claims</h1>
+        <p class="lede">Track the progress of your submitted insurance claims.</p>
+      </div>
+      <div class="heading-actions">
+        <button class="secondary-button" type="button" (click)="refreshClaims()" [disabled]="isLoading()"><svg lucideRefreshCw></svg><span>{{ isLoading() ? 'Loading' : 'Refresh' }}</span></button>
+        <a class="primary-button" [routerLink]="newClaimRoute"><svg lucideFilePlus2></svg><span>New claim</span></a>
+      </div>
+    </header>
+
+    @if (apiState() === 'error') {
+      <div class="connection connection-error">Unable to load claims. Check your access and retry.</div>
+    } @else if (isLoading()) {
+      <section class="customer-claims-list" aria-label="Loading claims"><div class="claim-skeleton"></div><div class="claim-skeleton"></div></section>
+    } @else {
+      <section class="customer-claims-list">
+        <div class="customer-claims-toolbar">
+          <div><h2>Claim history</h2><p>{{ claims().length }} submitted claim{{ claims().length === 1 ? '' : 's' }}</p></div>
+          @if (claims().length) {
+            <div class="customer-claim-filters"><label><svg lucideSearch></svg><input type="search" placeholder="Search claims" [ngModel]="query()" (ngModelChange)="query.set($event)" /></label><select aria-label="Filter claims by status" [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event)">@for (status of statusOptions(); track status) { <option [value]="status">{{ status }}</option> }</select></div>
+          }
+        </div>
+        @for (claim of filteredClaims(); track claim.claimId) {
+          <a class="customer-claim-card" [routerLink]="[claimsRoute, claim.claimId]">
+            <div class="claim-card-main"><p class="claim-number">{{ claim.claimNumber }}</p><p class="claim-type">{{ claim.claimTypeName }}</p></div>
+            <span class="status-badge" [class]="badgeClass(claim.claimStatusName)">{{ claim.claimStatusName }}</span>
+            <div class="claim-card-detail"><span>Incident</span><strong>{{ claim.incidentDate | date:'dd MMM y' }}</strong></div>
+            <div class="claim-card-detail amount"><span>Claim amount</span><strong>{{ claim.claimAmount | currency:'USD':'symbol':'1.0-0' }}</strong></div>
+          </a>
+        } @empty {
+          <div class="customer-claims-empty"><h2>{{ claims().length ? 'No matching claims' : 'No claims submitted yet' }}</h2><p>{{ claims().length ? 'Try changing your search or status filter.' : 'Create a claim when you need help with a covered incident.' }}</p>@if (!claims().length) { <a class="primary-button" [routerLink]="newClaimRoute"><svg lucideFilePlus2></svg><span>New claim</span></a> }</div>
+        }
+      </section>
+    }
+  </section>
+} @else {
 <header class="page-heading">
   <div>
     <p class="eyebrow">{{ isAdjuster ? 'Claims adjuster workspace' : isCompliance ? 'Compliance monitoring' : 'Claims' }}</p>
@@ -10,10 +50,9 @@
   </div>
 </header>
 
-<div class="connection" [class.connection-live]="apiState() === 'connected'" [class.connection-error]="apiState() === 'error'">
-  @if (apiState() === 'connected') { Live data from Claim Service API. }
-  @else { Unable to load claims. Check your access and retry. }
-</div>
+@if (apiState() === 'error') {
+  <div class="connection connection-error">Unable to load claims. Check your access and retry.</div>
+}
 
 <section class="metrics">
   <article><p>Open claims</p><strong>{{ openCount() }}</strong><span>Awaiting resolution</span></article>
@@ -36,3 +75,4 @@
     <tbody>@for (claim of filteredClaims(); track claim.claimId) { <tr [routerLink]="[claimsRoute, claim.claimId]"><td><strong>{{ claim.claimNumber }}</strong><span>Policy {{ claim.policyId }}</span></td><td>{{ claim.claimTypeName }}</td><td><span class="status-badge" [class]="badgeClass(claim.claimStatusName)">{{ claim.claimStatusName }}</span></td><td>{{ claim.priorityName }}</td><td>{{ claim.incidentDate | date:'dd MMM y' }}</td><td class="amount">{{ claim.claimAmount | currency:'USD':'symbol':'1.0-0' }}</td><td class="amount">{{ claim.settledAmount | currency:'USD':'symbol':'1.0-0' }}</td></tr> } @empty { <tr><td class="empty" colspan="7">No claims match this search or status filter.</td></tr> }</tbody>
   </table></div>
 </section>
+}

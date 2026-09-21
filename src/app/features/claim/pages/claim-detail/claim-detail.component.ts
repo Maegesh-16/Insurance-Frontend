@@ -39,7 +39,7 @@ export class ClaimDetailComponent {
     if (!claim) return [];
 
     return [
-      { label: 'Verify policy', detail: `Policy ${claim.policyId} is linked to this claim. Confirm active coverage in the policy record.`, state: claim.policyId > 0 ? 'complete' : 'blocked' },
+      { label: 'Verify policy', detail: `Policy ${claim.policyId} is linked to this claim. Confirm active coverage in the policy record.`, state: claim.policyId.trim() ? 'complete' : 'blocked' },
       { label: 'Check coverage', detail: `${claim.claimTypeName} claim for ${claim.currencyCode} ${claim.claimAmount.toLocaleString()}.`, state: claim.claimAmount > 0 ? 'attention' : 'blocked' },
       { label: 'Verify documents', detail: claim.documents.length ? `${claim.documents.length} supporting document${claim.documents.length === 1 ? '' : 's'} available for review.` : 'No supporting documents are attached.', state: claim.documents.length ? 'attention' : 'blocked' },
       { label: 'Investigate claim', detail: claim.assessments.length ? `${claim.assessments.length} assessment${claim.assessments.length === 1 ? '' : 's'} recorded.` : 'An assessment is required before a decision.', state: claim.assessments.length ? 'complete' : 'attention' },

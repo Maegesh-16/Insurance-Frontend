@@ -98,7 +98,7 @@ export class AiAssistantPageComponent {
     });
   }
   protected selectView(view: View): void { if (this.canAccessView(view)) void this.router.navigate(['/ai-assistant', view]); }
-  protected goToAdminDashboard(): void { void this.router.navigate(['/dashboard']); }
+  protected goToCustomerDashboard(): void { void this.router.navigate(['/customer/dashboard']); }
   protected canAccessView(view: View): boolean { return this.availableViews().includes(view); }
   protected useStarterPrompt(prompt: string): void { this.draft = prompt; }
   protected connect(): void { const token = this.tokenInput.trim(); if (!token) return; localStorage.setItem(this.storageKey, token); this.currentRoles.set(this.getRolesFromToken(token)); this.showConnection.set(false); this.connectionNote.set(''); this.errorMessage.set(''); this.promptTypes.set([]); this.loadPromptTypes(); this.resetConversation(); }

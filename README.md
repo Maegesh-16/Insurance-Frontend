@@ -18,6 +18,23 @@ npm run start:local
 
 Both commands start the application at `http://localhost:4200/` and reload it when source files change.
 
+## Index Business Knowledge
+
+The AI assistant indexes the BRD and role-functionality guidance into its pgvector-backed knowledge store. First validate the planned role-filtered sections:
+
+```powershell
+npm run seed:business-knowledge:dry-run
+```
+
+To index them, set a PlatformAdmin JWT from the signed-in portal session for the current PowerShell process, then run:
+
+```powershell
+$env:AI_ASSISTANT_TOKEN = '<PlatformAdmin JWT>'
+npm run seed:business-knowledge
+```
+
+The default target is the deployed AI Assistant service. Set `AI_ASSISTANT_API_URL` to use another environment; it must end with `/api`.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:

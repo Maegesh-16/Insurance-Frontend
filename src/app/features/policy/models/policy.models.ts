@@ -4,6 +4,8 @@ export interface PolicyType {
   name: string;
   description: string;
   basePremium: number;
+  isAvailable?: boolean;
+  benefits?: string[];
 }
 
 export interface CoverageRequest {

@@ -6,7 +6,7 @@
     </a>
 
     <nav class="shell-nav" aria-label="Application navigation">
-      @for (item of navigationItems; track item.label) {
+      @for (item of navigationItems; track item.route ?? item.label) {
         @if (item.route) {
           <a class="shell-nav-item" [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.exact ?? false }">{{ item.label }}</a>
         } @else {

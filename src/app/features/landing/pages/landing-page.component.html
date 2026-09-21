@@ -1,0 +1,58 @@
+<main class="landing">
+  <section class="hero">
+    <img class="hero-image" src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1800&q=85" alt="A family planning their financial future" />
+    <div class="hero-shade"></div>
+    <header class="site-header">
+      <a class="brand" routerLink="/"><span class="brand-mark">S</span><span>SureCover</span></a>
+      <nav aria-label="Public navigation">
+        <div class="nav-menu"><a routerLink="/login">Products</a><div class="nav-dropdown"><p>Popular protection</p>@for (item of productPreviews; track item.label) { <a routerLink="/login"><strong>{{ item.label }}</strong><span>{{ item.detail }}</span></a> }<a class="dropdown-all" routerLink="/login">Explore all plans <svg lucideArrowRight></svg></a></div></div>
+        <div class="nav-menu"><a routerLink="/login">Our impact</a><div class="nav-dropdown"><p>By the numbers</p>@for (item of impactPreviews; track item.label) { <a routerLink="/login"><strong>{{ item.label }}</strong><span>{{ item.detail }}</span></a> }<a class="dropdown-all" routerLink="/login">Compare with confidence <svg lucideArrowRight></svg></a></div></div>
+        <div class="nav-menu"><a routerLink="/login">Claims support</a><div class="nav-dropdown"><p>Here when you need us</p>@for (item of claimPreviews; track item.label) { <a routerLink="/login"><strong>{{ item.label }}</strong><span>{{ item.detail }}</span></a> }<a class="dropdown-all" routerLink="/login">Get claims support <svg lucideArrowRight></svg></a></div></div>
+      </nav>
+      <a class="sign-in" routerLink="/login">Sign in <svg lucideChevronRight></svg></a>
+    </header>
+    <div class="hero-content">
+      <p class="eyebrow"><svg lucideShieldCheck></svg>Protection made clear</p>
+      <h1>Insurance that keeps pace with your life.</h1>
+      <p class="hero-copy">Compare trusted cover for your health, home, journeys, and the people who matter most.</p>
+      <div class="hero-actions"><a class="button button-primary" routerLink="/login">Explore plans <svg lucideArrowRight></svg></a><a class="button button-quiet" routerLink="/login">Get a quote</a></div>
+      <div class="hero-proof"><span><strong>4.8/5</strong> member rating</span><i></i><span><strong>24/7</strong> claims support</span><i></i><span><strong>38</strong> partner insurers</span></div>
+    </div>
+  </section>
+
+  <section class="product-section" id="products">
+    <div class="section-heading"><div><p class="eyebrow dark">Find your cover</p><h2>A plan for the life you are building.</h2></div><a routerLink="/login" class="text-link">View all policies <svg lucideArrowRight></svg></a></div>
+    <div class="product-grid">
+      @for (product of products; track product.name) {
+        <a class="product-card" routerLink="/login">
+          <span class="product-icon" [class.health]="product.icon === 'health'" [class.life]="product.icon === 'life'" [class.motor]="product.icon === 'motor'" [class.home]="product.icon === 'home'" [class.travel]="product.icon === 'travel'">
+            @if (product.icon === 'health') { <svg lucideHeartPulse></svg> }
+            @if (product.icon === 'life') { <svg lucideShieldCheck></svg> }
+            @if (product.icon === 'motor') { <svg lucideCar></svg> }
+            @if (product.icon === 'home') { <svg lucideHome></svg> }
+            @if (product.icon === 'travel') { <svg lucidePlane></svg> }
+          </span>
+          <span class="product-body"><strong>{{ product.name }}</strong><small>{{ product.description }}</small><em>{{ product.price }}</em></span>
+          <svg class="card-arrow" lucideArrowRight></svg>
+        </a>
+      }
+    </div>
+  </section>
+
+  <section class="impact-section" id="progress">
+    <div class="impact-intro"><p class="eyebrow">The SureCover difference</p><h2>More confidence, from quote to claim.</h2><p>Our platform brings choices, policy details, and help together so protection never feels out of reach.</p><a class="button button-light" routerLink="/login">Start comparing <svg lucideArrowRight></svg></a></div>
+    <div class="impact-stats"><article><strong>1.2M</strong><span>customers protected</span><small>Across health, life, motor, and home cover</small></article><article><strong>96%</strong><span>claims support satisfaction</span><small>Measured after a claim is resolved</small></article><article><strong>INR 840Cr</strong><span>claims supported</span><small>Helping families recover and move forward</small></article></div>
+  </section>
+
+  <section class="insights" id="support">
+    <div class="section-heading"><div><p class="eyebrow dark">A clearer view</p><h2>Protection in motion.</h2></div><p class="section-note">Illustrative platform activity for new visitors.</p></div>
+    <div class="insight-grid">
+      <article class="chart-card"><div class="chart-card-heading"><div><span>Claims resolved</span><strong>78,240</strong></div><span class="trend"><svg lucideArrowRight></svg> 18.4%</span></div><div class="bar-chart" aria-label="Illustrative monthly claims resolved chart">@for (bar of claimBars; track $index) { <div class="bar-column"><i [style.height.%]="bar"></i><small>{{ monthLabels[$index] }}</small></div> }</div></article>
+      <article class="chart-card coverage-card"><div><span>Fast, human help</span><strong>When life changes, we show up.</strong><p>Guided policy selection and claim support are available at every important step.</p></div><div class="coverage-rings"><span></span><span></span><span><svg lucideBadgeCheck></svg></span></div><a routerLink="/login" class="text-link">Talk to an expert <svg lucideArrowRight></svg></a></article>
+    </div>
+  </section>
+
+  <section class="closing"><p class="eyebrow dark">Ready when you are</p><h2>See what the right cover can do for you.</h2><a class="button button-primary" routerLink="/login">Find my insurance <svg lucideArrowRight></svg></a></section>
+
+  <footer><a class="brand" routerLink="/"><span class="brand-mark">S</span><span>SureCover</span></a><span>Insurance, made more certain.</span><a routerLink="/login">Customer sign in</a></footer>
+</main>

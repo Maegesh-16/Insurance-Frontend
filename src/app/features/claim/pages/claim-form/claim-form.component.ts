@@ -2,12 +2,15 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { CustomerResponse } from '../../../customer/models/customer.models';
+import { PolicyResponse } from '../../../policy/models/policy.models';
+import { PolicyService } from '../../../policy/services/policy.service';
 import { ClaimLookup, CreateClaimRequest } from '../../models/claim.models';
 import { ClaimApiService } from '../../services/claim-api.service';
 
 interface ClaimFormModel {
-  policyId: number | null;
-  customerId: number | null;
+  policyId: string | null;
+  customerId: string | null;
   claimNumber: string;
   claimTypeId: number | null;
   claimStatusId: number | null;
@@ -29,16 +32,24 @@ interface ClaimFormModel {
 })
 export class ClaimFormComponent {
   private readonly claimsApi = inject(ClaimApiService);
+  private readonly policyService = inject(PolicyService);
   private readonly router = inject(Router);
   protected readonly claimTypes = signal<ClaimLookup[]>([]);
   protected readonly statuses = signal<ClaimLookup[]>([]);
   protected readonly priorities = signal<ClaimLookup[]>([]);
+  protected readonly policies = signal<PolicyResponse[]>([]);
   protected readonly isLoadingLookups = signal(false);
+  protected readonly isLoadingPolicies = signal(false);
   protected readonly isSaving = signal(false);
   protected readonly error = signal('');
   protected model: ClaimFormModel = this.newModel();
+  protected readonly customer = this.getStoredCustomer();
 
-  constructor() { this.loadLookups(); }
+  constructor() {
+    this.model.customerId = this.customer?.id ?? null;
+    this.loadLookups();
+    this.loadPolicies();
+  }
 
   protected loadLookups(): void {
     this.isLoadingLookups.set(true);
@@ -51,6 +62,25 @@ export class ClaimFormComponent {
         this.isLoadingLookups.set(false);
       },
       error: () => { this.error.set('Unable to load the Claim Service lookup data. Confirm that your portal session is valid.'); this.isLoadingLookups.set(false); }
+    });
+  }
+
+  protected loadPolicies(): void {
+    if (!this.customer) {
+      this.error.set('Complete your customer profile before submitting a claim.');
+      return;
+    }
+
+    this.isLoadingPolicies.set(true);
+    this.policyService.getMine(this.customer.id).subscribe({
+      next: (policies) => {
+        this.policies.set(policies.filter((policy) => policy.status === 3));
+        this.isLoadingPolicies.set(false);
+      },
+      error: () => {
+        this.error.set('Unable to load your policies. Please try again.');
+        this.isLoadingPolicies.set(false);
+      }
     });
   }
 
@@ -90,5 +120,9 @@ export class ClaimFormComponent {
       claimTypeId: null, claimStatusId: null, priorityId: null, incidentDate: new Date().toISOString().slice(0, 10),
       reportedAt: new Date().toISOString().slice(0, 16), claimAmount: null, currencyCode: 'USD', causeOfLoss: '', lossDescription: '', incidentLocation: ''
     };
+  }
+
+  private getStoredCustomer(): CustomerResponse | null {
+    try { return JSON.parse(localStorage.getItem('insurance.customer') || 'null') as CustomerResponse | null; } catch { return null; }
   }
 }
