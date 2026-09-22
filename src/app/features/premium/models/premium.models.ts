@@ -1,3 +1,17 @@
+export const PREMIUM_FREQUENCIES = [
+  { value: 'Monthly', label: 'Monthly', installmentsPerYear: 12 },
+  { value: 'Quarterly', label: 'Quarterly', installmentsPerYear: 4 },
+  { value: 'HalfYearly', label: 'Half-yearly', installmentsPerYear: 2 },
+  { value: 'Annual', label: 'Annually', installmentsPerYear: 1 }
+] as const;
+
+export type PremiumFrequency = typeof PREMIUM_FREQUENCIES[number]['value'];
+
+export function installmentPremium(annualPremium: number, frequency: PremiumFrequency): number {
+  const installments = PREMIUM_FREQUENCIES.find((item) => item.value === frequency)?.installmentsPerYear ?? 1;
+  return Math.round((annualPremium / installments) * 100) / 100;
+}
+
 export interface PremiumPlan {
   planId: string;
   policyTypeId: string;
@@ -7,7 +21,7 @@ export interface PremiumPlan {
 
 export interface CreatePremiumPlanRequest {
   policyTypeId: string;
-  frequency: string;
+  frequency: PremiumFrequency;
   basePremium: number;
 }
 

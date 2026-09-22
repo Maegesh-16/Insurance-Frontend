@@ -4,6 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PolicyResponse } from '../../../policy/models/policy.models';
 import { PolicyService } from '../../../policy/services/policy.service';
+import { CreatePaymentRequest } from '../../models/payment.models';
 import { PaymentService } from '../../services/payment.service';
 
 @Component({
@@ -16,6 +17,7 @@ export class PolicyCheckoutComponent {
   private readonly router = inject(Router);
   private readonly policyService = inject(PolicyService);
   private readonly paymentService = inject(PaymentService);
+  private paymentAttempt: { request: CreatePaymentRequest; idempotencyKey: string } | null = null;
   protected readonly policy = signal<PolicyResponse | null>(null);
   protected readonly isLoading = signal(true);
   protected readonly isPaying = signal(false);
@@ -47,15 +49,19 @@ export class PolicyCheckoutComponent {
   protected payNow(): void {
     const policy = this.policy();
     if (!policy || this.isPaying()) return;
+    const paymentAttempt = this.paymentAttempt ??= {
+      request: {
+        policyId: policy.id,
+        amount: policy.premiumAmount,
+        method: 'Online',
+        status: 'Completed',
+        paymentDate: new Date().toISOString()
+      },
+      idempotencyKey: crypto.randomUUID()
+    };
     this.isPaying.set(true);
     this.error.set('');
-    this.paymentService.createPayment({
-      policyId: policy.id,
-      amount: policy.premiumAmount,
-      method: 'Online',
-      status: 'Completed',
-      paymentDate: new Date().toISOString()
-    }).subscribe({
+    this.paymentService.createPayment(paymentAttempt.request, paymentAttempt.idempotencyKey).subscribe({
       next: (payment) => {
         this.paymentReference.set(payment.paymentId);
         this.isPaying.set(false);

@@ -13,9 +13,9 @@ export class PaymentService {
     return this.http.get<Payment[]>(this.apiUrl, { params });
   }
 
-  createPayment(request: CreatePaymentRequest): Observable<Payment> {
+  createPayment(request: CreatePaymentRequest, idempotencyKey: string): Observable<Payment> {
     return this.http.post<Payment>(this.apiUrl, request, {
-      headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() })
+      headers: new HttpHeaders({ 'Idempotency-Key': idempotencyKey })
     });
   }
 }

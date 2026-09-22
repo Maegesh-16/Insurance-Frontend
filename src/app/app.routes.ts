@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { CustomerOnboardingComponent } from './features/customer/pages/customer-onboarding/customer-onboarding.component';
+import { CustomerSearchComponent } from './features/customer/pages/customer-search/customer-search.component';
 import { KycReviewComponent } from './features/customer/pages/kyc-review/kyc-review.component';
+import { KycHistoryComponent } from './features/customer/pages/kyc-history/kyc-history.component';
+import { KycReportsComponent } from './features/customer/pages/kyc-reports/kyc-reports.component';
 import { ClaimDetailComponent } from './features/claim/pages/claim-detail/claim-detail.component';
 import { ClaimFormComponent } from './features/claim/pages/claim-form/claim-form.component';
 import { NotificationHistoryComponent } from './features/notification/pages/notification-history/notification-history.component';
@@ -14,6 +17,7 @@ import { AdministrationComponent } from './features/identity/pages/administratio
 import { AuthPageComponent } from './features/identity/pages/auth-page/auth-page.component';
 import { ComplianceProfileComponent } from './features/identity/pages/compliance-profile/compliance-profile.component';
 import { PolicyWorkspaceComponent } from './features/policy/pages/policy-workspace/policy-workspace.component';
+import { PolicyProductManagementComponent } from './features/policy/pages/policy-product-management/policy-product-management.component';
 import { AppShellComponent } from './shared/layout/app-shell/app-shell.component';
 
 const loadDashboard = () => import('./features/identity/pages/dashboard/dashboard.component').then((module) => module.DashboardComponent);
@@ -43,8 +47,8 @@ export const routes: Routes = [
 			{ path: 'customer/claims/new', component: ClaimFormComponent, canActivate: [authGuard], data: { roles: ['Customer'] }, title: 'Submit Claim | SureCover' },
 			{ path: 'customer/claims/:claimId', component: ClaimDetailComponent, canActivate: [authGuard], data: { roles: ['Customer'] }, title: 'Claim Details | SureCover' },
 			{ path: 'underwriter/dashboard', loadComponent: loadDashboard, canActivate: [authGuard], data: { roles: ['PolicyUnderwriter'] }, title: 'Underwriting Dashboard | SureCover' },
-			{ path: 'underwriter/applications', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PolicyUnderwriter'] }, title: 'Policy Applications | SureCover' },
-			{ path: 'underwriter/policies', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PolicyUnderwriter'] }, title: 'Issued Policies | SureCover' },
+			{ path: 'underwriter/applications', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PolicyUnderwriter'], view: 'applications' }, title: 'Policy Applications | SureCover' },
+			{ path: 'underwriter/policies', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PolicyUnderwriter'], view: 'issued' }, title: 'Issued Policies | SureCover' },
 			{ path: 'underwriter/notifications', component: NotificationHistoryComponent, canActivate: [authGuard], data: { roles: ['PolicyUnderwriter'] }, title: 'Notifications | SureCover' },
 			{ path: 'claims-adjuster/dashboard', loadComponent: loadDashboard, canActivate: [authGuard], data: { roles: ['ClaimsAdjuster'] }, title: 'Claims Dashboard | SureCover' },
 			{ path: 'claims-adjuster/claims', loadComponent: loadClaimsList, canActivate: [authGuard], data: { roles: ['ClaimsAdjuster'] }, title: 'Claims Queue | SureCover' },
@@ -60,10 +64,14 @@ export const routes: Routes = [
 			{ path: 'compliance/notifications', component: NotificationHistoryComponent, canActivate: [authGuard], data: { roles: ['ComplianceOfficer'] }, title: 'Notifications | SureCover' },
 			{ path: 'compliance/profile', component: ComplianceProfileComponent, canActivate: [authGuard], data: { roles: ['ComplianceOfficer'] }, title: 'Compliance Profile | SureCover' },
 			{ path: 'administration', component: AdministrationComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Administration | SureCover' },
-			{ path: 'policy-management', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PolicyUnderwriter'] }, title: 'Policy Management | SureCover' },
+			{ path: 'policy-products', component: PolicyProductManagementComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Policy Products | SureCover' },
+			{ path: 'policy-management', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin', 'PolicyUnderwriter'] }, title: 'Policy Management | SureCover' },
 			{ path: 'premium-plans', component: PremiumPlansComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Premium Plans | SureCover' },
 			{ path: 'profile', component: CustomerOnboardingComponent, canActivate: [authGuard], data: { roles: ['Customer'] }, title: 'Profile and KYC | SureCover' },
 			{ path: 'kyc-review', component: KycReviewComponent, canActivate: [authGuard], data: { roles: ['KycReviewer'] }, title: 'KYC Approval | SureCover' },
+			{ path: 'kyc-history', component: KycHistoryComponent, canActivate: [authGuard], data: { roles: ['KycReviewer'] }, title: 'KYC History | SureCover' },
+			{ path: 'kyc-reports', component: KycReportsComponent, canActivate: [authGuard], data: { roles: ['KycReviewer'] }, title: 'KYC Reports | SureCover' },
+			{ path: 'customer-search', component: CustomerSearchComponent, canActivate: [authGuard], data: { roles: ['KycReviewer'] }, title: 'Customer Search | SureCover' },
 			{ path: 'policies', component: PolicyWorkspaceComponent, canActivate: [authGuard], data: { roles: ['Customer', 'PolicyUnderwriter', 'SupportAgent'] }, title: 'Policies | SureCover' },
 			{ path: 'premiums', component: PremiumWorkspaceComponent, canActivate: [authGuard], data: { roles: ['Customer'] }, title: 'Premiums | SureCover' },
 			{ path: 'claims', loadComponent: loadClaimsList, canActivate: [authGuard], data: { roles: ['Customer', 'ClaimsAdjuster', 'SupportAgent'] }, title: 'Claims | SureCover' },

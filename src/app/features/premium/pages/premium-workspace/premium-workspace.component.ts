@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { PolicyResponse, PolicyType } from '../../../policy/models/policy.models';
 import { PolicyService } from '../../../policy/services/policy.service';
 import { AuthService } from '../../../identity/services/auth.service';
-import { CreatePremiumPlanRequest, PremiumCalculation, PremiumDiscount, PremiumHistory, PremiumPlan, PremiumSchedule } from '../../models/premium.models';
+import { CreatePremiumPlanRequest, PREMIUM_FREQUENCIES, PremiumCalculation, PremiumDiscount, PremiumFrequency, PremiumHistory, PremiumPlan, PremiumSchedule } from '../../models/premium.models';
 import { PremiumService } from '../../services/premium.service';
 
 @Component({
@@ -32,8 +32,9 @@ export class PremiumWorkspaceComponent {
   protected readonly success = signal('');
   protected readonly customer = this.getStoredCustomer();
   protected readonly isAdmin = this.authService.getSession()?.roles.includes('PlatformAdmin') === true;
+  protected readonly frequencies = PREMIUM_FREQUENCIES;
   protected readonly newPlanPolicyTypeId = signal('');
-  protected readonly newPlanFrequency = signal('Monthly');
+  protected readonly newPlanFrequency = signal<PremiumFrequency>('Monthly');
   protected readonly newPlanBasePremium = signal<number | null>(null);
 
   constructor() {
