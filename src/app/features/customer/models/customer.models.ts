@@ -27,4 +27,18 @@ export interface KycCaseSummary {
   sizeBytes: number;
   submittedAtUtc: string;
   riskScore: number;
+  status?: string;
+}
+export interface KycHistoryEntry {
+  caseId: string;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  status: string;
+  submittedAtUtc: string;
+  reviewedAtUtc: string | null;
+  rejectionReason: string | null;
+  eventType: string;
+  details: string;
+  occurredAtUtc: string;
 }

@@ -1,7 +1,10 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { switchMap, timer } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PolicyResponse } from '../../models/policy.models';
 import { PolicyService } from '../../services/policy.service';
 
@@ -11,6 +14,8 @@ import { PolicyService } from '../../services/policy.service';
   templateUrl: './policy-management.component.html'
 })
 export class PolicyManagementComponent {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
   private readonly policyService = inject(PolicyService);
   protected readonly policies = signal<PolicyResponse[]>([]);
   protected readonly loading = signal(true);
@@ -19,6 +24,8 @@ export class PolicyManagementComponent {
   protected readonly targetPolicyStatus = signal(2);
   protected readonly underwritingRemarks = signal('');
   protected readonly error = signal('');
+  protected readonly isApplicationsView = this.route.snapshot.data['view'] === 'applications';
+  protected readonly isIssuedPoliciesView = this.route.snapshot.data['view'] === 'issued';
 
   constructor() { this.loadPolicies(); }
 
@@ -55,8 +62,19 @@ export class PolicyManagementComponent {
 
   private loadPolicies(): void {
     this.loading.set(true);
-    this.policyService.getAll().subscribe({
-      next: (policies) => { this.policies.set(policies); this.loading.set(false); },
+    timer(0, 30000).pipe(
+      switchMap(() => this.policyService.getAll()),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (policies) => {
+        const visiblePolicies = this.isIssuedPoliciesView
+          ? policies.filter((policy) => policy.status === 3)
+          : this.isApplicationsView
+            ? policies.filter((policy) => policy.status === 1 || policy.status === 2)
+            : policies;
+        this.policies.set(visiblePolicies);
+        this.loading.set(false);
+      },
       error: (error: HttpErrorResponse) => { this.error.set(this.message(error)); this.loading.set(false); }
     });
   }

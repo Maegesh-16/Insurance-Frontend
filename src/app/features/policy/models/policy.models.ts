@@ -55,3 +55,10 @@ export interface TransitionPolicyStatusRequest {
   status: number;
   remarks: string;
 }
+
+export interface CreatePolicyTypeRequest {
+  code: string;
+  name: string;
+  description: string;
+  basePremium: number;
+}
