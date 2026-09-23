@@ -169,6 +169,7 @@ export class PolicyWorkspaceComponent {
 
   private getErrorMessage(error: HttpErrorResponse): string {
     if (error.status === 0) return 'Cannot reach Policy Service. Start it on port 5182 and try again.';
+    if (error.status === 429) return 'Policy Service is receiving too many requests. Wait a moment, then refresh and try again.';
     if (typeof error.error?.detail === 'string') return error.error.detail;
     if (typeof error.error?.title === 'string') return error.error.title;
     return 'We could not create this policy. Please try again.';

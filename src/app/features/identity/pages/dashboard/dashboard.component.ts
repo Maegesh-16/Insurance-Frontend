@@ -73,6 +73,7 @@ export class DashboardComponent {
   protected readonly claimCount = signal<number | null>(null);
   protected readonly underwriterPolicies = signal<PolicyResponse[]>([]);
   protected readonly adjusterClaims = signal<ClaimSummary[]>([]);
+  protected readonly availablePolicyTypes = computed(() => this.policyTypes().filter((policyType) => policyType.isAvailable !== false));
   protected readonly activePolicies = computed(() => this.customerPolicies().filter((policy) => policy.status === 3));
   protected readonly totalCoverage = computed(() => this.activePolicies().flatMap((policy) => policy.coverages).reduce((sum, coverage) => sum + coverage.sumInsured, 0));
   protected readonly nextPremium = computed(() => this.premiumSchedules()
@@ -107,6 +108,12 @@ export class DashboardComponent {
 
   protected kycAction(): string {
     return this.customer()?.kyc?.status === 2 ? 'View KYC status' : this.customer()?.kyc?.status === 3 ? 'Resubmit KYC' : 'Complete KYC';
+  }
+
+  protected kycDescription(): string {
+    return this.customer()?.kyc?.status === 2
+      ? 'Your identity is verified and policy applications are available.'
+      : 'Verification is required before submitting an insurance application.';
   }
 
   protected policyStatusLabel(status: number): string {

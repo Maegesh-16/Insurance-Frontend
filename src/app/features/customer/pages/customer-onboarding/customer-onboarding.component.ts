@@ -6,7 +6,7 @@ import { CustomerRequest, CustomerResponse, CustomerUpdateRequest, KycSubmission
 import { CustomerService } from '../../services/customer.service';
 import { AuthService } from '../../../identity/services/auth.service';
 
-interface KycSubmission extends Pick<KycSubmissionResponse, 'status' | 'submittedAtUtc'> {
+interface KycSubmission extends Pick<KycSubmissionResponse, 'status' | 'submittedAtUtc' | 'rejectionReason'> {
   caseId: string;
 }
 
@@ -31,6 +31,26 @@ export class CustomerOnboardingComponent {
   protected readonly uploadSuccess = signal('');
   protected readonly selectedFile = signal<File | null>(null);
   protected readonly kycSubmission = signal<KycSubmission | null>(null);
+  protected readonly kycStatus = computed(() => {
+    const customerStatus = this.currentCustomer()?.kyc?.status;
+    if (customerStatus === 2) return 'Verified';
+    if (customerStatus === 3) return 'Rejected';
+    return this.kycSubmission()?.status ?? (customerStatus === 1 ? 'PendingReview' : null);
+  });
+  protected readonly kycStatusTitle = computed(() => ({
+    Verified: 'KYC approved',
+    Rejected: 'KYC rejected',
+    ReverificationRequired: 'KYC resubmission required',
+    PendingReview: 'KYC document submitted'
+  } as Record<string, string>)[this.kycStatus() ?? ''] ?? 'KYC verification');
+  protected readonly kycStatusMessage = computed(() => {
+    switch (this.kycStatus()) {
+      case 'Verified': return 'Your identity verification is approved. You can now apply for insurance products.';
+      case 'Rejected': return this.kycSubmission()?.rejectionReason || 'Your document was rejected. Contact support or submit a new document.';
+      case 'ReverificationRequired': return 'Please upload a new document for verification.';
+      default: return 'Your document is pending verification.';
+    }
+  });
   protected readonly includeAddress = signal(true);
   protected readonly includeNominee = signal(false);
   protected readonly fullName = this.session?.userName ?? '';
@@ -91,7 +111,7 @@ export class CustomerOnboardingComponent {
       next: (result) => {
         this.uploadSuccess.set(`Document submitted. Case ${result.kycCaseId} is pending review.`);
         this.profileStatus.set('Your KYC document was submitted for review.');
-        const submission = { caseId: result.kycCaseId, status: result.status, submittedAtUtc: new Date().toISOString() };
+        const submission = { caseId: result.kycCaseId, status: result.status, submittedAtUtc: new Date().toISOString(), rejectionReason: null };
         localStorage.setItem(this.getKycSubmissionKey(customer.id), JSON.stringify(submission));
         this.kycSubmission.set(submission);
         this.selectedFile.set(null);
@@ -206,7 +226,7 @@ export class CustomerOnboardingComponent {
     this.customerService.getLatestKycSubmission(customerId).subscribe({
       next: (submission) => {
         if (!submission) return;
-        const storedSubmission = { caseId: submission.caseId, status: submission.status, submittedAtUtc: submission.submittedAtUtc };
+        const storedSubmission = { caseId: submission.caseId, status: submission.status, submittedAtUtc: submission.submittedAtUtc, rejectionReason: submission.rejectionReason };
         localStorage.setItem(this.getKycSubmissionKey(customerId), JSON.stringify(storedSubmission));
         this.kycSubmission.set(storedSubmission);
       }
