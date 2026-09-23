@@ -11,6 +11,7 @@ export class PolicyService {
 
   getTypes(): Observable<PolicyType[]> { return this.http.get<PolicyType[]>(`${this.apiUrl}/types`); }
   createType(request: CreatePolicyTypeRequest): Observable<PolicyType> { return this.http.post<PolicyType>(`${this.apiUrl}/types`, request); }
+  setTypeAvailability(policyTypeId: string, isAvailable: boolean): Observable<PolicyType> { return this.http.patch<PolicyType>(`${this.apiUrl}/types/${policyTypeId}/availability`, { isAvailable }); }
   getAll(): Observable<PolicyResponse[]> { return this.http.get<PolicyResponse[]>(this.apiUrl); }
   getMine(customerId: string): Observable<PolicyResponse[]> { return this.http.get<PolicyResponse[]>(`${this.apiUrl}/mine`, { params: { customerId } }); }
   create(request: CreatePolicyRequest): Observable<PolicyResponse> { return this.http.post<PolicyResponse>(this.apiUrl, request); }

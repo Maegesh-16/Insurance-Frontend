@@ -22,6 +22,7 @@ export class PremiumPlansComponent {
   protected readonly plans = signal<PremiumPlan[]>([]);
   protected readonly policyTypes = signal<PolicyType[]>([]);
   protected readonly isLoading = signal(true);
+  protected readonly isLoadingPolicyTypes = signal(true);
   protected readonly isSaving = signal(false);
   protected readonly isCreatingMissing = signal(false);
   protected readonly error = signal('');
@@ -32,8 +33,10 @@ export class PremiumPlansComponent {
   protected readonly policyTypeSaveError = signal('');
   protected readonly policyTypeSaveSuccess = signal('');
   protected readonly isSavingPolicyType = signal(false);
+  protected readonly savingPolicyTypeId = signal<string | null>(null);
   protected readonly frequencies = PREMIUM_FREQUENCIES;
-  protected readonly missingPlans = computed(() => this.policyTypes().flatMap((policyType) =>
+  protected readonly availablePolicyTypes = computed(() => this.policyTypes().filter((policyType) => policyType.isAvailable !== false));
+  protected readonly missingPlans = computed(() => this.availablePolicyTypes().flatMap((policyType) =>
     PREMIUM_FREQUENCIES
       .filter((frequency) => !this.hasPlan(policyType.id, frequency.value))
       .map((frequency): CreatePremiumPlanRequest => ({
@@ -42,7 +45,7 @@ export class PremiumPlansComponent {
         basePremium: installmentPremium(policyType.basePremium, frequency.value)
       }))
   ));
-  protected readonly completeProductCount = computed(() => this.policyTypes().filter((policyType) =>
+  protected readonly completeProductCount = computed(() => this.availablePolicyTypes().filter((policyType) =>
     PREMIUM_FREQUENCIES.every((frequency) => this.hasPlan(policyType.id, frequency.value))
   ).length);
   protected newPlan: PremiumPlanDraft = this.blankPlan();
@@ -54,13 +57,33 @@ export class PremiumPlansComponent {
       error: (error: HttpErrorResponse) => { this.error.set(this.msg(error)); this.isLoading.set(false); }
     });
     this.policyService.getTypes().subscribe({
-      next: (types) => this.policyTypes.set(types),
-      error: () => {}
+      next: (types) => { this.policyTypes.set(types); this.isLoadingPolicyTypes.set(false); },
+      error: () => this.isLoadingPolicyTypes.set(false)
     });
   }
 
   protected openForm(): void { this.newPlan = this.blankPlan(); this.saveError.set(''); this.saveSuccess.set(''); this.showForm.set(true); }
   protected openPolicyTypeForm(): void { this.newPolicyType = this.blankPolicyType(); this.policyTypeSaveError.set(''); this.policyTypeSaveSuccess.set(''); this.showPolicyTypeForm.set(true); }
+
+  protected setPolicyTypeAvailability(policyType: PolicyType): void {
+    const isAvailable = policyType.isAvailable === false;
+    const action = isAvailable ? 'Restore' : 'Archive';
+    if (!confirm(`${action} ${policyType.name}?`)) return;
+
+    this.savingPolicyTypeId.set(policyType.id);
+    this.error.set('');
+    this.policyService.setTypeAvailability(policyType.id, isAvailable).subscribe({
+      next: (updatedType) => {
+        this.policyTypes.update((types) => types.map((type) => type.id === updatedType.id ? updatedType : type));
+        this.policyTypeSaveSuccess.set(`Policy product ${isAvailable ? 'restored' : 'archived'}: ${updatedType.name}`);
+        this.savingPolicyTypeId.set(null);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.error.set(error.error?.detail ?? `Policy product could not be ${isAvailable ? 'restored' : 'archived'}.`);
+        this.savingPolicyTypeId.set(null);
+      }
+    });
+  }
 
   protected submitPolicyType(): void {
     this.newPolicyType.code = this.newPolicyType.code.trim().toUpperCase();
