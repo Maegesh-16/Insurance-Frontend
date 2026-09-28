@@ -8,6 +8,13 @@ export interface PolicyType {
   benefits?: string[];
 }
 
+export interface CreatePolicyTypeRequest {
+  code: string;
+  name: string;
+  description: string;
+  basePremium: number;
+}
+
 export interface CoverageRequest {
   name: string;
   description: string;

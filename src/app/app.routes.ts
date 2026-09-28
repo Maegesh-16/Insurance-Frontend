@@ -17,6 +17,7 @@ import { AdministrationComponent } from './features/identity/pages/administratio
 import { AuthPageComponent } from './features/identity/pages/auth-page/auth-page.component';
 import { ComplianceProfileComponent } from './features/identity/pages/compliance-profile/compliance-profile.component';
 import { PolicyWorkspaceComponent } from './features/policy/pages/policy-workspace/policy-workspace.component';
+import { PolicyProductManagementComponent } from './features/policy/pages/policy-product-management/policy-product-management.component';
 import { AppShellComponent } from './shared/layout/app-shell/app-shell.component';
 
 const loadDashboard = () => import('./features/identity/pages/dashboard/dashboard.component').then((module) => module.DashboardComponent);
@@ -63,6 +64,7 @@ export const routes: Routes = [
 			{ path: 'compliance/notifications', component: NotificationHistoryComponent, canActivate: [authGuard], data: { roles: ['ComplianceOfficer'] }, title: 'Notifications | SureCover' },
 			{ path: 'compliance/profile', component: ComplianceProfileComponent, canActivate: [authGuard], data: { roles: ['ComplianceOfficer'] }, title: 'Compliance Profile | SureCover' },
 			{ path: 'administration', component: AdministrationComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Administration | SureCover' },
+			{ path: 'policy-products', component: PolicyProductManagementComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Policy Products | SureCover' },
 			{ path: 'policy-management', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin', 'PolicyUnderwriter'] }, title: 'Policy Management | SureCover' },
 			{ path: 'premium-plans', component: PremiumPlansComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Premium Plans | SureCover' },
 			{ path: 'profile', component: CustomerOnboardingComponent, canActivate: [authGuard], data: { roles: ['Customer'] }, title: 'Profile and KYC | SureCover' },
