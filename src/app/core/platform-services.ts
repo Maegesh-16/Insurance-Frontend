@@ -8,9 +8,9 @@ export const platformServiceUrls = {
   notification: 'https://notificationservice-9ko7.onrender.com',
   payment: 'https://paymentservice-zfth.onrender.com',
   premium: 'https://premiumservice-bagg.onrender.com',
-  reporting: 'http://10.50.15.17:8081',
-  aiAssistant: 'http://10.50.15.17:8082',
-  claims: 'http://10.50.15.17:8083',
+  reporting: 'https://insurance-reporting-service.onrender.com',
+  aiAssistant: 'https://insurance-ai-assistant-service.onrender.com',
+  claims: 'https://insurance-claim-service-mq7u.onrender.com',
 } as const;
 
 const wakeUpUrls = [

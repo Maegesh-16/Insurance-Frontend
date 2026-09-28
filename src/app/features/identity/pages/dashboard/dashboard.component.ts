@@ -64,6 +64,9 @@ export class DashboardComponent {
   protected readonly operationsTitle = this.getOperationsTitle();
   protected readonly serviceHealth = signal<{ name: string; status: string }[]>([]);
   protected readonly dashboardError = signal('');
+  protected readonly customerLoaded = signal(false);
+  protected readonly policyTypesError = signal('');
+  protected readonly policiesError = signal('');
   protected readonly policyCount = signal<number | null>(null);
   protected readonly customer = signal<CustomerResponse | null>(null);
   protected readonly kycApprovedNotification = signal(false);
@@ -102,6 +105,7 @@ export class DashboardComponent {
   }
 
   protected kycLabel(): string {
+    if (!this.customerLoaded()) return 'Loading...';
     const status = this.customer()?.kyc?.status;
     return status === 2 ? 'Approved' : status === 3 ? 'Rejected' : status === 4 ? 'Under review' : status ? 'Pending' : 'Not started';
   }
@@ -111,6 +115,7 @@ export class DashboardComponent {
   }
 
   protected kycDescription(): string {
+    if (!this.customerLoaded()) return 'Loading your verification status.';
     return this.customer()?.kyc?.status === 2
       ? 'Your identity is verified and policy applications are available.'
       : 'Verification is required before submitting an insurance application.';
@@ -231,38 +236,75 @@ export class DashboardComponent {
 
   private loadCustomerDashboard(): void {
     this.policyService.getTypes().subscribe({
-      next: (policyTypes) => this.policyTypes.set(policyTypes),
-      error: () => this.policyTypes.set([])
+      next: (policyTypes) => {
+        this.policyTypesError.set('');
+        this.policyTypes.set(policyTypes);
+      },
+      error: () => {
+        this.policyTypes.set([]);
+        this.policyTypesError.set('Policy products are temporarily unavailable. Please try again later.');
+      }
     });
     this.customerService.getCurrent().subscribe({
       next: (customer) => {
+        this.customerLoaded.set(true);
         if (!customer) {
           this.policyCount.set(0);
+          this.dashboardError.set('Your customer profile is not available. Complete your profile before applying for a policy.');
           return;
         }
         this.customer.set(customer);
         this.kycApprovedNotification.set(customer.kyc?.status === 2);
         localStorage.setItem('insurance.customer', JSON.stringify(customer));
-        this.policyService.getMine(customer.id).subscribe({
-          next: (policies) => {
-            this.customerPolicies.set(policies);
-            this.policyCount.set(policies.length);
-            for (const policy of policies.filter((item) => item.status === 3)) {
-              this.premiumService.getSchedules(policy.id).subscribe({
-                next: (schedules) => this.premiumSchedules.update((items) => [...items, ...schedules]),
-                error: () => undefined
-              });
-            }
-          },
-          error: () => this.policyCount.set(null)
-        });
+        this.loadCustomerPolicies(customer);
       },
-      error: () => { this.dashboardError.set('Something went wrong while loading your account information. Please try again.'); this.policyCount.set(0); }
+      error: () => {
+        this.customerLoaded.set(true);
+        const cachedCustomer = this.getCachedCustomer();
+        if (!cachedCustomer) {
+          this.dashboardError.set('Your customer profile is temporarily unavailable. Please try again later.');
+          this.policyCount.set(null);
+          return;
+        }
+
+        this.customer.set(cachedCustomer);
+        this.kycApprovedNotification.set(cachedCustomer.kyc?.status === 2);
+        this.loadCustomerPolicies(cachedCustomer);
+      }
     });
     this.claimApi.getMyClaims().subscribe({
       next: (claims) => this.claimCount.set(claims.filter((claim) => !['Rejected', 'Settled', 'Closed'].includes(claim.claimStatusName)).length),
       error: () => this.claimCount.set(null)
     });
+  }
+
+  private loadCustomerPolicies(customer: CustomerResponse): void {
+    this.policyService.getMine(customer.id).subscribe({
+      next: (policies) => {
+        this.policiesError.set('');
+        this.customerPolicies.set(policies);
+        this.policyCount.set(policies.length);
+        for (const policy of policies.filter((item) => item.status === 3)) {
+          this.premiumService.getSchedules(policy.id).subscribe({
+            next: (schedules) => this.premiumSchedules.update((items) => [...items, ...schedules]),
+            error: () => undefined
+          });
+        }
+      },
+      error: () => {
+        this.policyCount.set(null);
+        this.policiesError.set('Your policies are temporarily unavailable. Please try again later.');
+      }
+    });
+  }
+
+  private getCachedCustomer(): CustomerResponse | null {
+    try {
+      const customer = JSON.parse(localStorage.getItem('insurance.customer') || 'null') as CustomerResponse | null;
+      return customer?.id ? customer : null;
+    } catch {
+      return null;
+    }
   }
 
   private loadUnderwriterDashboard(): void {

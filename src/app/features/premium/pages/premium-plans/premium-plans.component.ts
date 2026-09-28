@@ -93,6 +93,18 @@ export class PremiumPlansComponent {
       this.policyTypeSaveError.set('Code, name, description, and a positive base premium are required.');
       return;
     }
+    if (!/^[A-Z][A-Z0-9_]{2,49}$/.test(this.newPolicyType.code)) {
+      this.policyTypeSaveError.set('Code must be 3-50 uppercase letters, numbers, or underscores.');
+      return;
+    }
+    if (this.newPolicyType.name.length < 3 || this.newPolicyType.description.length < 10) {
+      this.policyTypeSaveError.set('Name must have at least 3 characters and description at least 10 characters.');
+      return;
+    }
+    if (this.newPolicyType.basePremium < 100 || this.newPolicyType.basePremium > 1_000_000) {
+      this.policyTypeSaveError.set('Base premium must be between INR 100 and INR 1,000,000.');
+      return;
+    }
     this.isSavingPolicyType.set(true);
     this.policyTypeSaveError.set('');
     this.policyService.createType(this.newPolicyType).subscribe({

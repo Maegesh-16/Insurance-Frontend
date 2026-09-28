@@ -161,10 +161,10 @@
       <p class="mt-1 text-sm text-emerald-900/65">Add a product that customers can select in real time.</p>
       @if (policyTypeSaveError()) { <p class="mt-4 border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ policyTypeSaveError() }}</p> }
       <div class="mt-5 grid gap-4">
-        <label class="grid gap-1 text-sm font-semibold">Code<input class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" maxlength="50" [(ngModel)]="newPolicyType.code" placeholder="TRAVEL_BASIC"></label>
-        <label class="grid gap-1 text-sm font-semibold">Name<input class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" maxlength="100" [(ngModel)]="newPolicyType.name" placeholder="Travel Basic"></label>
-        <label class="grid gap-1 text-sm font-semibold">Description<textarea class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" maxlength="256" rows="3" [(ngModel)]="newPolicyType.description" placeholder="Coverage for travel-related risks"></textarea></label>
-        <label class="grid gap-1 text-sm font-semibold">Base premium<input class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" type="number" min="0.01" step="0.01" [(ngModel)]="newPolicyType.basePremium"></label>
+        <label class="grid gap-1 text-sm font-semibold">Code<input class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" minlength="3" maxlength="50" pattern="[A-Z][A-Z0-9_]{2,49}" [(ngModel)]="newPolicyType.code" placeholder="TRAVEL_BASIC"></label>
+        <label class="grid gap-1 text-sm font-semibold">Name<input class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" minlength="3" maxlength="100" [(ngModel)]="newPolicyType.name" placeholder="Travel Basic"></label>
+        <label class="grid gap-1 text-sm font-semibold">Description<textarea class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" minlength="10" maxlength="256" rows="3" [(ngModel)]="newPolicyType.description" placeholder="Coverage for travel-related risks"></textarea></label>
+        <label class="grid gap-1 text-sm font-semibold">Base premium<input class="mt-1 w-full border border-emerald-900/20 px-3 py-2 font-normal" type="number" min="100" max="1000000" step="0.01" [(ngModel)]="newPolicyType.basePremium"></label>
       </div>
       <div class="mt-6 flex justify-end gap-3"><button class="border border-emerald-900/20 px-4 py-2 text-sm font-semibold" type="button" (click)="showPolicyTypeForm.set(false)">Cancel</button><button class="border border-emerald-800 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" type="button" [disabled]="isSavingPolicyType()" (click)="submitPolicyType()">{{ isSavingPolicyType() ? 'Saving...' : 'Create product' }}</button></div>
     </section>
