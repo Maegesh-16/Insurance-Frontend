@@ -51,7 +51,13 @@
         @for (policy of activePolicies(); track policy.id) {
           <article class="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div><p class="font-serif text-2xl text-emerald-950">{{ policy.policyType.name }}</p><p class="mt-1 text-sm text-emerald-900/65">{{ policy.policyNumber }} <span class="px-1 text-emerald-900/35">|</span> {{ policy.startDate | date: 'mediumDate' }} to {{ policy.endDate | date: 'mediumDate' }}</p><ul class="mt-4 grid gap-1.5 text-sm text-emerald-900/75">@for (benefit of policyBenefits(policy.policyType); track benefit) { <li class="flex gap-2"><span class="font-bold text-emerald-700" aria-hidden="true">+</span>{{ benefit }}</li> }</ul></div>
-            <div class="flex flex-wrap gap-2"><button type="button" class="w-fit border border-emerald-800 px-4 py-2.5 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50" (click)="checkout(policy.id)">Pay premium</button><button type="button" class="w-fit bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700" (click)="openClaims()">Submit a claim</button></div>
+            <div class="flex flex-wrap gap-2">
+              @if (isPaymentComplete(policy.id)) {
+                <button type="button" class="w-fit bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700" (click)="openClaims(policy.id)">Submit a claim</button>
+              } @else {
+                <button type="button" class="w-fit border border-emerald-800 px-4 py-2.5 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-60" [disabled]="isLoadingPayments()" (click)="checkout(policy.id)">{{ isLoadingPayments() ? 'Checking payment...' : 'Pay premium' }}</button>
+              }
+            </div>
           </article>
         } @empty { <p class="px-5 py-8 text-sm text-emerald-900/65">No active policies.</p> }
       </div>

@@ -3,7 +3,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { CustomerResponse } from '../../../customer/models/customer.models';
+import { PaymentService } from '../../../payment/services/payment.service';
 import { CreatePolicyRequest, PolicyResponse, PolicyType } from '../../models/policy.models';
 import { PolicyService } from '../../services/policy.service';
 import { UpdatePolicyRequest } from '../../models/policy.models';
@@ -18,12 +20,15 @@ export class PolicyWorkspaceComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly policyService = inject(PolicyService);
+  private readonly paymentService = inject(PaymentService);
   protected readonly policyTypes = signal<PolicyType[]>([]);
   protected readonly availablePolicyTypes = computed(() => this.policyTypes().filter((policyType) => policyType.isAvailable !== false));
   protected readonly isLoadingTypes = signal(true);
   protected readonly policies = signal<PolicyResponse[]>([]);
   protected readonly applications = computed(() => this.policies().filter((policy) => [1, 2].includes(policy.status)));
   protected readonly activePolicies = computed(() => this.policies().filter((policy) => policy.status === 3));
+  protected readonly paidPolicyIds = signal<ReadonlySet<string>>(new Set());
+  protected readonly isLoadingPayments = signal(false);
   protected readonly isSubmitting = signal(false);
   protected readonly submittingApplicationId = signal<string | null>(null);
   protected readonly error = signal('');
@@ -51,7 +56,10 @@ export class PolicyWorkspaceComponent {
     if (this.view === 'products') this.loadPolicyTypes();
     else this.isLoadingTypes.set(false);
     if (this.customer) this.policyService.getMine(this.customer.id).subscribe({
-      next: (policies) => this.policies.set(policies),
+      next: (policies) => {
+        this.policies.set(policies);
+        if (this.view === 'policies') this.loadPaymentStatuses(policies);
+      },
       error: (error: HttpErrorResponse) => this.error.set(this.getErrorMessage(error))
     });
   }
@@ -99,7 +107,12 @@ export class PolicyWorkspaceComponent {
     void this.router.navigate(['/customer/checkout', policyId]);
   }
 
-  protected openClaims(): void { void this.router.navigate(['/customer/claims/new']); }
+  protected isPaymentComplete(policyId: string): boolean { return this.paidPolicyIds().has(policyId); }
+
+  protected openClaims(policyId: string): void {
+    if (!this.isPaymentComplete(policyId)) return;
+    void this.router.navigate(['/customer/claims/new'], { queryParams: { policyId } });
+  }
 
   protected submitForReview(policy: PolicyResponse): void {
     if (policy.status !== 1) return;
@@ -170,6 +183,22 @@ export class PolicyWorkspaceComponent {
     this.policyService.getTypes().subscribe({
       next: (types) => { this.policyTypes.set(types); this.isLoadingTypes.set(false); afterLoad?.(); },
       error: (error: HttpErrorResponse) => { this.error.set(this.getErrorMessage(error)); this.isLoadingTypes.set(false); }
+    });
+  }
+
+  private loadPaymentStatuses(policies: PolicyResponse[]): void {
+    const activePolicies = policies.filter((policy) => policy.status === 3);
+    if (activePolicies.length === 0) return;
+
+    this.isLoadingPayments.set(true);
+    forkJoin(activePolicies.map((policy) => this.paymentService.getPayments(policy.id))).subscribe({
+      next: (paymentsByPolicy) => {
+        this.paidPolicyIds.set(new Set(activePolicies
+          .filter((_, index) => paymentsByPolicy[index].some((payment) => payment.status.toLowerCase() === 'completed'))
+          .map((policy) => policy.id)));
+        this.isLoadingPayments.set(false);
+      },
+      error: () => this.isLoadingPayments.set(false)
     });
   }
 

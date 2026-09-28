@@ -4,7 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PolicyResponse } from '../../../policy/models/policy.models';
 import { PolicyService } from '../../../policy/services/policy.service';
-import { CreatePaymentRequest } from '../../models/payment.models';
+import { CheckoutPaymentRequest, CheckoutPaymentResponse } from '../../models/payment.models';
 import { PaymentService } from '../../services/payment.service';
 
 @Component({
@@ -17,12 +17,12 @@ export class PolicyCheckoutComponent {
   private readonly router = inject(Router);
   private readonly policyService = inject(PolicyService);
   private readonly paymentService = inject(PaymentService);
-  private paymentAttempt: { request: CreatePaymentRequest; idempotencyKey: string } | null = null;
+  private paymentAttempt: { request: CheckoutPaymentRequest; idempotencyKey: string } | null = null;
   protected readonly policy = signal<PolicyResponse | null>(null);
   protected readonly isLoading = signal(true);
   protected readonly isPaying = signal(false);
   protected readonly error = signal('');
-  protected readonly paymentReference = signal('');
+  protected readonly confirmation = signal<CheckoutPaymentResponse | null>(null);
 
   constructor() {
     const policyId = this.route.snapshot.paramMap.get('policyId');
@@ -53,18 +53,16 @@ export class PolicyCheckoutComponent {
       request: {
         policyId: policy.id,
         amount: policy.premiumAmount,
-        method: 'Online',
-        status: 'Completed',
-        paymentDate: new Date().toISOString()
+        method: 'Online'
       },
       idempotencyKey: sessionStorage.getItem(this.idempotencyKeyStorageName(policy.id)) ?? crypto.randomUUID()
     };
     sessionStorage.setItem(this.idempotencyKeyStorageName(policy.id), paymentAttempt.idempotencyKey);
     this.isPaying.set(true);
     this.error.set('');
-    this.paymentService.createPayment(paymentAttempt.request, paymentAttempt.idempotencyKey).subscribe({
-      next: (payment) => {
-        this.paymentReference.set(payment.paymentId);
+    this.paymentService.checkout(paymentAttempt.request, paymentAttempt.idempotencyKey).subscribe({
+      next: (confirmation) => {
+        this.confirmation.set(confirmation);
         sessionStorage.removeItem(this.idempotencyKeyStorageName(policy.id));
         this.isPaying.set(false);
       },
@@ -84,8 +82,14 @@ export class PolicyCheckoutComponent {
   private handleError(error: HttpErrorResponse): void {
     this.isLoading.set(false);
     this.isPaying.set(false);
-    this.error.set(error.status === 0
-      ? 'Payment service is currently unavailable. Please try again shortly.'
-      : 'We could not complete your payment. Please try again.');
+    if (error.status === 0) {
+      this.error.set('Payment service is currently unavailable. Please try again shortly.');
+    } else if (error.status === 401) {
+      this.error.set('Your session could not be verified. Please sign in again.');
+    } else if (error.status === 403) {
+      this.error.set('Your account is not permitted to complete this payment.');
+    } else {
+      this.error.set(error.error?.detail ?? 'We could not complete your payment. Please try again.');
+    }
   }
 }
