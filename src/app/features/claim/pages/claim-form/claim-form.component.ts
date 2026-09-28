@@ -1,8 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CustomerResponse } from '../../../customer/models/customer.models';
+import { PaymentService } from '../../../payment/services/payment.service';
 import { PolicyResponse } from '../../../policy/models/policy.models';
 import { PolicyService } from '../../../policy/services/policy.service';
 import { ClaimLookup, CreateClaimRequest } from '../../models/claim.models';
@@ -33,6 +34,8 @@ interface ClaimFormModel {
 export class ClaimFormComponent {
   private readonly claimsApi = inject(ClaimApiService);
   private readonly policyService = inject(PolicyService);
+  private readonly paymentService = inject(PaymentService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly claimTypes = signal<ClaimLookup[]>([]);
   protected readonly statuses = signal<ClaimLookup[]>([]);
@@ -75,8 +78,29 @@ export class ClaimFormComponent {
     this.isLoadingPolicies.set(true);
     this.policyService.getMine(this.customer.id).subscribe({
       next: (policies) => {
-        this.policies.set(policies.filter((policy) => policy.status === 3));
-        this.isLoadingPolicies.set(false);
+        const activePolicies = policies.filter((policy) => policy.status === 3);
+        if (activePolicies.length === 0) {
+          this.policies.set([]);
+          this.isLoadingPolicies.set(false);
+          return;
+        }
+
+        forkJoin(activePolicies.map((policy) => this.paymentService.getPayments(policy.id))).subscribe({
+          next: (paymentsByPolicy) => {
+            const eligiblePolicies = activePolicies.filter((_, index) =>
+              paymentsByPolicy[index].some((payment) => payment.status.toLowerCase() === 'completed'));
+            this.policies.set(eligiblePolicies);
+            const requestedPolicyId = this.route.snapshot.queryParamMap.get('policyId');
+            if (requestedPolicyId && eligiblePolicies.some((policy) => policy.id === requestedPolicyId)) {
+              this.model.policyId = requestedPolicyId;
+            }
+            this.isLoadingPolicies.set(false);
+          },
+          error: () => {
+            this.error.set('Unable to verify premium payment status. Please try again.');
+            this.isLoadingPolicies.set(false);
+          }
+        });
       },
       error: () => {
         this.error.set('Unable to load your policies. Please try again.');

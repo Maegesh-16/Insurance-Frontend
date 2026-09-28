@@ -32,4 +32,20 @@ describe('PaymentService', () => {
     expect(request.request.headers.get('Idempotency-Key')).toBe('payment-attempt-1');
     request.flush({ paymentId: 'payment-1', ...payment });
   });
+
+  it('submits checkout with an idempotency key', () => {
+    const checkout = { policyId: 'policy-1', amount: 2500, method: 'Online' };
+
+    service.checkout(checkout, 'checkout-attempt-1').subscribe();
+
+    const request = http.expectOne('/payment-api/api/payments/checkout');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(checkout);
+    expect(request.request.headers.get('Idempotency-Key')).toBe('checkout-attempt-1');
+    request.flush({
+      payment: { paymentId: 'payment-1', ...checkout, status: 'Completed', paymentDate: '2026-09-28T00:00:00Z' },
+      transaction: { transactionId: 'transaction-1', paymentId: 'payment-1', gatewayRef: 'GW-1', status: 'Completed' },
+      receipt: { receiptId: 'receipt-1', paymentId: 'payment-1', receiptNumber: 'RCT-1', generatedDate: '2026-09-28T00:00:00Z' }
+    });
+  });
 });
