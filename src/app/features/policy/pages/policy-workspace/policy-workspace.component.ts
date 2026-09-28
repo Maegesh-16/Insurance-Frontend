@@ -25,6 +25,7 @@ export class PolicyWorkspaceComponent {
   protected readonly applications = computed(() => this.policies().filter((policy) => [1, 2].includes(policy.status)));
   protected readonly activePolicies = computed(() => this.policies().filter((policy) => policy.status === 3));
   protected readonly isSubmitting = signal(false);
+  protected readonly submittingApplicationId = signal<string | null>(null);
   protected readonly error = signal('');
   protected readonly savedPolicy = signal<PolicyResponse | null>(null);
   protected readonly lastSaveWasUpdate = signal(false);
@@ -33,9 +34,10 @@ export class PolicyWorkspaceComponent {
   protected readonly customer = this.getStoredCustomer();
   protected readonly selectedPolicyTypeId = signal('');
   protected readonly selectedPolicyType = computed(() => this.policyTypes().find((item) => item.id === this.selectedPolicyTypeId()) ?? null);
+  protected readonly minimumStartDate = this.toDateInput(new Date());
   protected readonly form = this.formBuilder.nonNullable.group({
     policyTypeId: ['', Validators.required],
-    startDate: [this.toDateInput(new Date()), Validators.required],
+    startDate: [this.minimumStartDate, Validators.required],
     endDate: [this.toDateInput(new Date(new Date().setFullYear(new Date().getFullYear() + 1))), Validators.required],
     coverageName: ['Core protection', Validators.required],
     coverageDescription: ['Essential protection for your selected policy.', Validators.required],
@@ -99,6 +101,25 @@ export class PolicyWorkspaceComponent {
 
   protected openClaims(): void { void this.router.navigate(['/customer/claims/new']); }
 
+  protected submitForReview(policy: PolicyResponse): void {
+    if (policy.status !== 1) return;
+    this.error.set('');
+    this.submittingApplicationId.set(policy.id);
+    this.policyService.transitionStatus(policy.id, {
+      status: 2,
+      remarks: 'Customer submitted this application for underwriting review.'
+    }).subscribe({
+      next: (updatedPolicy) => {
+        this.policies.update((policies) => policies.map((item) => item.id === updatedPolicy.id ? updatedPolicy : item));
+        this.submittingApplicationId.set(null);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.error.set(this.getErrorMessage(error));
+        this.submittingApplicationId.set(null);
+      }
+    });
+  }
+
   protected submit(): void {
     if (!this.customer || this.form.invalid) { this.form.markAllAsTouched(); return; }
     if (this.customer.kyc?.status !== 2) {
@@ -106,7 +127,9 @@ export class PolicyWorkspaceComponent {
       return;
     }
     const value = this.form.getRawValue();
+    if (value.startDate < this.minimumStartDate) { this.error.set('The policy start date cannot be in the past.'); return; }
     if (value.startDate > value.endDate) { this.error.set('The policy end date must be after its start date.'); return; }
+    if (value.deductible >= value.sumInsured) { this.error.set('The deductible must be lower than the sum insured.'); return; }
     const selectedType = this.selectedPolicyType();
     if (!selectedType) { this.error.set('Choose a policy type first.'); return; }
     this.error.set('');

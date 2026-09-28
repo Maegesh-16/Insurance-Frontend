@@ -57,13 +57,15 @@ export class PolicyCheckoutComponent {
         status: 'Completed',
         paymentDate: new Date().toISOString()
       },
-      idempotencyKey: crypto.randomUUID()
+      idempotencyKey: sessionStorage.getItem(this.idempotencyKeyStorageName(policy.id)) ?? crypto.randomUUID()
     };
+    sessionStorage.setItem(this.idempotencyKeyStorageName(policy.id), paymentAttempt.idempotencyKey);
     this.isPaying.set(true);
     this.error.set('');
     this.paymentService.createPayment(paymentAttempt.request, paymentAttempt.idempotencyKey).subscribe({
       next: (payment) => {
         this.paymentReference.set(payment.paymentId);
+        sessionStorage.removeItem(this.idempotencyKeyStorageName(policy.id));
         this.isPaying.set(false);
       },
       error: (error: HttpErrorResponse) => this.handleError(error)
@@ -76,6 +78,8 @@ export class PolicyCheckoutComponent {
     try { return (JSON.parse(localStorage.getItem('insurance.customer') || 'null') as { id?: string } | null)?.id ?? null; }
     catch { return null; }
   }
+
+  private idempotencyKeyStorageName(policyId: string): string { return `insurance.payment.${policyId}`; }
 
   private handleError(error: HttpErrorResponse): void {
     this.isLoading.set(false);

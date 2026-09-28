@@ -21,7 +21,7 @@ export class PolicyManagementComponent {
   protected readonly loading = signal(true);
   protected readonly savingPolicyId = signal<string | null>(null);
   protected readonly selectedPolicy = signal<PolicyResponse | null>(null);
-  protected readonly targetPolicyStatus = signal(2);
+  protected readonly targetPolicyStatus = signal(3);
   protected readonly underwritingRemarks = signal('');
   protected readonly error = signal('');
   protected readonly isApplicationsView = this.route.snapshot.data['view'] === 'applications';
@@ -57,7 +57,7 @@ export class PolicyManagementComponent {
   }
 
   protected nextPolicyStatuses(status: number): number[] {
-    return ({ 1: [2, 5], 2: [3, 5], 3: [4, 5, 6] } as Record<number, number[]>)[status] ?? [];
+    return ({ 2: [3, 5], 3: [4, 5, 6] } as Record<number, number[]>)[status] ?? [];
   }
 
   private loadPolicies(): void {
@@ -70,7 +70,7 @@ export class PolicyManagementComponent {
         const visiblePolicies = this.isIssuedPoliciesView
           ? policies.filter((policy) => policy.status === 3)
           : this.isApplicationsView
-            ? policies.filter((policy) => policy.status === 1 || policy.status === 2)
+            ? policies.filter((policy) => policy.status === 2)
             : policies;
         this.policies.set(visiblePolicies);
         this.loading.set(false);

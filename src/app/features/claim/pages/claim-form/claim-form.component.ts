@@ -59,6 +59,7 @@ export class ClaimFormComponent {
         this.claimTypes.set(types.filter((item) => item.isActive));
         this.statuses.set(statuses.filter((item) => item.isActive));
         this.priorities.set(priorities.filter((item) => item.isActive));
+        this.model.claimStatusId = this.statuses().find((item) => item.code.toLowerCase() === 'submitted')?.id ?? null;
         this.isLoadingLookups.set(false);
       },
       error: () => { this.error.set('Unable to load the Claim Service lookup data. Confirm that your portal session is valid.'); this.isLoadingLookups.set(false); }
@@ -90,6 +91,26 @@ export class ClaimFormComponent {
       return;
     }
 
+    const policy = this.policies().find((item) => item.id === this.model.policyId);
+    if (!policy || this.model.claimAmount <= 0) {
+      this.error.set('Choose an active policy and enter a claim amount greater than zero.');
+      return;
+    }
+
+    const incidentDate = new Date(`${this.model.incidentDate}T00:00:00`);
+    const reportedAt = new Date(this.model.reportedAt);
+    const policyStartDate = new Date(`${policy.startDate}T00:00:00`);
+    const policyEndDate = new Date(`${policy.endDate}T23:59:59`);
+    const sumInsured = policy.coverages.reduce((total, coverage) => total + coverage.sumInsured, 0);
+    if (Number.isNaN(incidentDate.getTime()) || incidentDate > new Date() || incidentDate > reportedAt || incidentDate < policyStartDate || incidentDate > policyEndDate) {
+      this.error.set('The incident date must be within the active policy period and cannot be after the report date.');
+      return;
+    }
+    if (this.model.claimAmount > sumInsured) {
+      this.error.set('The claim amount cannot exceed the policy sum insured.');
+      return;
+    }
+
     this.isSaving.set(true);
     this.error.set('');
     const request: CreateClaimRequest = {
@@ -101,7 +122,7 @@ export class ClaimFormComponent {
       incidentDate: this.model.incidentDate,
       reportedAt: new Date(this.model.reportedAt).toISOString(),
       claimAmount: this.model.claimAmount,
-      currencyCode: this.model.currencyCode.toUpperCase(),
+      currencyCode: 'INR',
       causeOfLoss: this.model.causeOfLoss.trim(),
       lossDescription: this.model.lossDescription.trim(),
       priorityId: this.model.priorityId,
@@ -118,7 +139,7 @@ export class ClaimFormComponent {
     return {
       policyId: null, customerId: null, claimNumber: `CLM-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,
       claimTypeId: null, claimStatusId: null, priorityId: null, incidentDate: new Date().toISOString().slice(0, 10),
-      reportedAt: new Date().toISOString().slice(0, 16), claimAmount: null, currencyCode: 'USD', causeOfLoss: '', lossDescription: '', incidentLocation: ''
+      reportedAt: new Date().toISOString().slice(0, 16), claimAmount: null, currencyCode: 'INR', causeOfLoss: '', lossDescription: '', incidentLocation: ''
     };
   }
 

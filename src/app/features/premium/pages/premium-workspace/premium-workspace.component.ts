@@ -138,10 +138,11 @@ export class PremiumWorkspaceComponent {
   private loadPolicies(): void {
     this.policyService.getMine(this.customer!.id).subscribe({
       next: (policies) => {
-        this.policies.set(policies);
+        this.policies.set(policies.filter((policy) => policy.status === 3));
         this.isLoading.set(false);
-        if (policies[0]) {
-          this.selectedPolicyId.set(policies[0].id);
+        const activePolicy = this.policies()[0];
+        if (activePolicy) {
+          this.selectedPolicyId.set(activePolicy.id);
           this.loadPolicyDetails();
         }
       },

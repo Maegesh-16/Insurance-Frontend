@@ -28,11 +28,14 @@ export class ClaimDetailComponent {
   private readonly claimId = Number(this.route.snapshot.paramMap.get('claimId'));
   private readonly roles = this.authService.getSession()?.roles ?? [];
   protected readonly isAdjuster = this.roles.includes('ClaimsAdjuster');
+  protected readonly isCustomer = this.roles.includes('Customer');
   protected readonly claimsRoute = this.roles.includes('ClaimsAdjuster') ? '/claims-adjuster/claims' : this.roles.includes('Customer') ? '/customer/claims' : this.roles.includes('ComplianceOfficer') ? '/compliance/claims' : '/claims';
   protected readonly claim = signal<ClaimDetail | null>(null);
   protected readonly isLoading = signal(false);
   protected readonly error = signal('');
-  protected readonly tabs: ClaimTab[] = ['overview', 'documents', 'assessments', 'parties', 'settlements', 'activity'];
+  protected readonly tabs: ClaimTab[] = this.isCustomer
+    ? ['overview', 'documents', 'activity']
+    : ['overview', 'documents', 'assessments', 'parties', 'settlements', 'activity'];
   protected readonly selectedTab = signal<ClaimTab>('overview');
   protected readonly reviewSteps = computed<ReviewStep[]>(() => {
     const claim = this.claim();
@@ -51,6 +54,29 @@ export class ClaimDetailComponent {
   constructor() { this.loadClaim(); }
 
   protected selectTab(tab: ClaimTab): void { this.selectedTab.set(tab); }
+
+  protected customerStatusLabel(status: string): string {
+    return ({
+      Submitted: 'Claim submitted',
+      'Under review': 'Claim under review',
+      Approved: 'Claim approved',
+      Rejected: 'Claim declined',
+      Settled: 'Claim settled',
+      Closed: 'Claim closed'
+    } as Record<string, string>)[status] ?? status;
+  }
+
+  protected customerStatusMessage(status: string, comments?: string | null): string {
+    if (comments) return comments;
+    return ({
+      Submitted: 'Your claim is waiting for an initial review.',
+      'Under review': 'Our claims team is reviewing the information you provided.',
+      Approved: 'Your claim has been approved. Settlement details will appear when they are available.',
+      Rejected: 'Your claim was declined. Contact support if you need clarification.',
+      Settled: 'Your approved settlement has been completed.',
+      Closed: 'This claim is complete.'
+    } as Record<string, string>)[status] ?? 'Your claim record was updated.';
+  }
 
   protected loadClaim(): void {
     if (!Number.isInteger(this.claimId) || this.claimId <= 0) { this.error.set('A valid claim ID is required.'); return; }

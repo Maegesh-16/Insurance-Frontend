@@ -24,39 +24,39 @@
     "pathRewrite": { "^/policy-api": "/policies" }
   },
   "/notification-api": {
-    "target": "https://notificationservice-9ko7.onrender.com",
+     "target": "https://insurance-api-gateway-rn0g.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/notification-api": "" }
+     "pathRewrite": { "^/notification-api": "/notifications" }
   },
   "/premium-api": {
-    "target": "https://premiumservice-bagg.onrender.com",
+     "target": "https://insurance-api-gateway-rn0g.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/premium-api": "" }
+     "pathRewrite": { "^/premium-api": "/premium" }
   },
   "/payment-api": {
-    "target": "https://paymentservice-zfth.onrender.com",
+     "target": "https://insurance-api-gateway-rn0g.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/payment-api": "" }
+     "pathRewrite": { "^/payment-api": "/payments" }
   },
   "/claim-api": {
-    "target": "https://insurance-claim-service-mq7u.onrender.com",
+     "target": "https://insurance-api-gateway-rn0g.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/claim-api": "" }
+     "pathRewrite": { "^/claim-api": "/claims" }
   },
   "/reporting-api": {
-    "target": "https://insurance-reporting-service.onrender.com",
+     "target": "https://insurance-api-gateway-rn0g.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/reporting-api": "" }
+     "pathRewrite": { "^/reporting-api": "/reporting" }
   },
   "/ai-assistant-api": {
-    "target": "https://insurance-ai-assistant-service.onrender.com",
+     "target": "https://insurance-api-gateway-rn0g.onrender.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/ai-assistant-api": "" }
+     "pathRewrite": { "^/ai-assistant-api": "/ai-assistant" }
   }
 }
