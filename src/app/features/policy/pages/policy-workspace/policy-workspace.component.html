@@ -36,7 +36,7 @@
             @if (policy.status === 1) {
               <div class="flex flex-wrap gap-2"><button type="button" class="border border-emerald-800 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50" (click)="editDraft(policy)">Edit draft</button><button type="button" class="bg-emerald-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50" [disabled]="submittingApplicationId() === policy.id" (click)="submitForReview(policy)">{{ submittingApplicationId() === policy.id ? 'Submitting...' : 'Submit for review' }}</button></div>
             }
-          </article>
+          </article>``````
         }
       </div>
     </section>
