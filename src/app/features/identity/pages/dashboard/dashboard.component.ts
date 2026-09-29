@@ -79,6 +79,16 @@ export class DashboardComponent {
   protected readonly availablePolicyTypes = computed(() => this.policyTypes().filter((policyType) => policyType.isAvailable !== false));
   protected readonly activePolicies = computed(() => this.customerPolicies().filter((policy) => policy.status === 3));
   protected readonly totalCoverage = computed(() => this.activePolicies().flatMap((policy) => policy.coverages).reduce((sum, coverage) => sum + coverage.sumInsured, 0));
+  protected readonly profileChecklist = computed(() => {
+    const customer = this.customer();
+    return [
+      { label: 'Profile details', complete: Boolean(customer?.phoneNumber && customer.dateOfBirth) },
+      { label: 'Address', complete: customer?.address !== null && customer?.address !== undefined },
+      { label: 'KYC verification', complete: customer?.kyc?.status === 2 },
+      { label: 'Nominee', complete: customer?.nominee !== null && customer?.nominee !== undefined }
+    ];
+  });
+  protected readonly completedProfileSteps = computed(() => this.profileChecklist().filter((item) => item.complete).length);
   protected readonly nextPremium = computed(() => this.premiumSchedules()
     .filter((schedule) => schedule.status.toLowerCase() !== 'paid' && new Date(schedule.dueDate) >= new Date())
     .sort((first, second) => first.dueDate.localeCompare(second.dueDate))[0] ?? null);
@@ -123,6 +133,13 @@ export class DashboardComponent {
 
   protected policyStatusLabel(status: number): string {
     return ({ 1: 'Draft', 2: 'Pending approval', 3: 'Active', 4: 'Lapsed', 5: 'Cancelled', 6: 'Expired' } as Record<number, string>)[status] ?? 'Unknown';
+  }
+
+  protected retryCustomerDashboard(): void {
+    this.dashboardError.set('');
+    this.policiesError.set('');
+    this.premiumSchedules.set([]);
+    this.loadCustomerDashboard();
   }
 
   private getOperationsCards(): DashboardCard[] {
@@ -269,6 +286,7 @@ export class DashboardComponent {
 
         this.customer.set(cachedCustomer);
         this.kycApprovedNotification.set(cachedCustomer.kyc?.status === 2);
+        this.dashboardError.set('Showing your last saved profile while live customer data reconnects.');
         this.loadCustomerPolicies(cachedCustomer);
       }
     });

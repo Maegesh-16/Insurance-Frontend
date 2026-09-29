@@ -17,6 +17,7 @@ export interface CreatePaymentRequest {
 
 export interface CheckoutPaymentRequest {
   policyId: string;
+  scheduleId: string;
   amount: number;
   method: string;
 }

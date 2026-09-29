@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -27,7 +28,7 @@ interface ClaimFormModel {
 
 @Component({
   selector: 'app-claim-form',
-  imports: [FormsModule, RouterLink],
+  imports: [DecimalPipe, FormsModule, RouterLink],
   templateUrl: './claim-form.component.html',
   styleUrl: '../claim-workspace.scss'
 })
@@ -45,6 +46,8 @@ export class ClaimFormComponent {
   protected readonly isLoadingPolicies = signal(false);
   protected readonly isSaving = signal(false);
   protected readonly error = signal('');
+  protected readonly selectedDocuments = signal<File[]>([]);
+  protected readonly documentError = signal('');
   protected model: ClaimFormModel = this.newModel();
   protected readonly customer = this.getStoredCustomer();
 
@@ -109,9 +112,28 @@ export class ClaimFormComponent {
     });
   }
 
+  protected selectDocuments(event: Event): void {
+    const files = Array.from((event.target as HTMLInputElement).files ?? []);
+    const acceptedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    const invalidFile = files.find((file) => !acceptedTypes.includes(file.type) || file.size > 10 * 1024 * 1024);
+    if (invalidFile) {
+      this.selectedDocuments.set([]);
+      this.documentError.set('Choose PDF, JPEG, or PNG files no larger than 10 MB each.');
+      return;
+    }
+
+    this.selectedDocuments.set(files);
+    this.documentError.set('');
+  }
+
   protected submit(form: NgForm): void {
     if (form.invalid || this.model.policyId === null || this.model.customerId === null || this.model.claimTypeId === null || this.model.claimStatusId === null || this.model.priorityId === null || this.model.claimAmount === null) {
       form.control.markAllAsTouched();
+      return;
+    }
+
+    if (this.selectedDocuments().length === 0) {
+      this.documentError.set('Attach at least one supporting document before submitting your claim.');
       return;
     }
 

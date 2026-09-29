@@ -15,6 +15,7 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { label: 'Insurance Products', route: '/customer/insurance-products', roles: ['Customer'] },
   { label: 'My Applications', route: '/customer/applications', roles: ['Customer'] },
   { label: 'My Policies', route: '/customer/policies', roles: ['Customer'] },
+  { label: 'Premiums', route: '/premiums', roles: ['Customer'] },
   { label: 'My Claims', route: '/customer/claims', roles: ['Customer'] },
   { label: 'AI assistant', route: '/customer/assistant', roles: ['Customer'] },
   { label: 'Dashboard', route: '/underwriter/dashboard', roles: ['PolicyUnderwriter'], exact: true },

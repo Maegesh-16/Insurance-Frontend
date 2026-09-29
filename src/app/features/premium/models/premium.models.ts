@@ -25,6 +25,11 @@ export interface CreatePremiumPlanRequest {
   basePremium: number;
 }
 
+export interface CreatePremiumScheduleRequest {
+  policyId: string;
+  frequency: PremiumFrequency;
+}
+
 export interface PremiumCalculation {
   policyId: string;
   planId: string;

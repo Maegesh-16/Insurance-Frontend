@@ -5,7 +5,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CustomerResponse } from '../../../customer/models/customer.models';
-import { PaymentService } from '../../../payment/services/payment.service';
+import { installmentPremium, PREMIUM_FREQUENCIES, PremiumFrequency, PremiumPlan, PremiumSchedule } from '../../../premium/models/premium.models';
+import { PremiumService } from '../../../premium/services/premium.service';
 import { CreatePolicyRequest, PolicyResponse, PolicyType } from '../../models/policy.models';
 import { PolicyService } from '../../services/policy.service';
 import { UpdatePolicyRequest } from '../../models/policy.models';
@@ -20,15 +21,19 @@ export class PolicyWorkspaceComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly policyService = inject(PolicyService);
-  private readonly paymentService = inject(PaymentService);
+  private readonly premiumService = inject(PremiumService);
   protected readonly policyTypes = signal<PolicyType[]>([]);
   protected readonly availablePolicyTypes = computed(() => this.policyTypes().filter((policyType) => policyType.isAvailable !== false));
   protected readonly isLoadingTypes = signal(true);
   protected readonly policies = signal<PolicyResponse[]>([]);
-  protected readonly applications = computed(() => this.policies().filter((policy) => [1, 2].includes(policy.status)));
+  protected readonly applications = computed(() => this.policies().filter((policy) => [1, 2, 5].includes(policy.status)));
   protected readonly activePolicies = computed(() => this.policies().filter((policy) => policy.status === 3));
-  protected readonly paidPolicyIds = signal<ReadonlySet<string>>(new Set());
+  protected readonly premiumPlans = signal<PremiumPlan[]>([]);
+  protected readonly paymentSchedules = signal<ReadonlyMap<string, PremiumSchedule[]>>(new Map());
   protected readonly isLoadingPayments = signal(false);
+  protected readonly isCreatingSchedule = signal(false);
+  protected readonly scheduleSelectionPolicy = signal<PolicyResponse | null>(null);
+  protected readonly selectedPaymentFrequency = signal<PremiumFrequency | null>(null);
   protected readonly isSubmitting = signal(false);
   protected readonly submittingApplicationId = signal<string | null>(null);
   protected readonly error = signal('');
@@ -103,14 +108,103 @@ export class PolicyWorkspaceComponent {
     });
   }
 
-  protected checkout(policyId: string): void {
-    void this.router.navigate(['/customer/checkout', policyId]);
+  protected checkout(policyId: string, scheduleId: string): void {
+    void this.router.navigate(['/customer/checkout', policyId], { queryParams: { scheduleId } });
   }
 
-  protected isPaymentComplete(policyId: string): boolean { return this.paidPolicyIds().has(policyId); }
+  protected availablePaymentPlans(policy: PolicyResponse): PremiumPlan[] {
+    return this.premiumPlans().filter((plan) => plan.policyTypeId === policy.policyTypeId);
+  }
+
+  protected availablePaymentFrequencies(policy: PolicyResponse): PremiumFrequency[] {
+    const configuredFrequencies = this.availablePaymentPlans(policy).map((plan) => plan.frequency as PremiumFrequency);
+    return configuredFrequencies.length > 0 ? configuredFrequencies : PREMIUM_FREQUENCIES.map((item) => item.value);
+  }
+
+  protected estimatedInstallmentAmount(policy: PolicyResponse, frequency: PremiumFrequency): number {
+    return installmentPremium(policy.premiumAmount, frequency);
+  }
+
+  protected openScheduleSelection(policy: PolicyResponse): void {
+    this.error.set('');
+    this.scheduleSelectionPolicy.set(policy);
+    this.selectedPaymentFrequency.set(this.availablePaymentPlans(policy)[0]?.frequency as PremiumFrequency ?? null);
+  }
+
+  protected closeScheduleSelection(): void {
+    if (this.isCreatingSchedule()) return;
+    this.scheduleSelectionPolicy.set(null);
+    this.selectedPaymentFrequency.set(null);
+  }
+
+  protected choosePaymentFrequency(frequency: string): void {
+    if (PREMIUM_FREQUENCIES.some((item) => item.value === frequency)) {
+      this.selectedPaymentFrequency.set(frequency as PremiumFrequency);
+    }
+  }
+
+  protected paymentFrequencyLabel(frequency: string): string {
+    return PREMIUM_FREQUENCIES.find((item) => item.value === frequency)?.label ?? frequency;
+  }
+
+  protected createSchedule(): void {
+    const policy = this.scheduleSelectionPolicy();
+    const frequency = this.selectedPaymentFrequency();
+    if (!policy || !frequency) return;
+
+    this.isCreatingSchedule.set(true);
+    this.error.set('');
+    this.premiumService.createSchedules({ policyId: policy.id, frequency }).subscribe({
+      next: (schedules) => {
+        this.paymentSchedules.update((schedulesByPolicy) => {
+          const updatedSchedules = new Map(schedulesByPolicy);
+          updatedSchedules.set(policy.id, schedules);
+          return updatedSchedules;
+        });
+        this.isCreatingSchedule.set(false);
+        this.closeScheduleSelection();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.error.set(this.getPremiumErrorMessage(error));
+        this.isCreatingSchedule.set(false);
+      }
+    });
+  }
+
+  protected nextInstallment(policyId: string): PremiumSchedule | null {
+    return [...(this.paymentSchedules().get(policyId) ?? [])]
+      .filter((schedule) => schedule.status.toLowerCase() !== 'paid')
+      .sort((first, second) => first.dueDate.localeCompare(second.dueDate))[0] ?? null;
+  }
+
+  protected schedulesForPolicy(policyId: string): PremiumSchedule[] {
+    return [...(this.paymentSchedules().get(policyId) ?? [])]
+      .sort((first, second) => first.installmentNumber - second.installmentNumber);
+  }
+
+  protected hasPaymentSchedule(policyId: string): boolean { return this.schedulesForPolicy(policyId).length > 0; }
+
+  protected scheduleStatusLabel(status: string): string { return status.replace(/([a-z])([A-Z])/g, '$1 $2'); }
+
+  protected renewalStatus(policy: PolicyResponse): string {
+    const daysUntilExpiry = Math.ceil((new Date(`${policy.endDate}T00:00:00`).getTime() - Date.now()) / 86_400_000);
+    if (daysUntilExpiry < 0) return 'This policy has reached its end date.';
+    if (daysUntilExpiry <= 30) return `Renewal due in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'}.`;
+    return `Coverage is active until ${new Date(`${policy.endDate}T00:00:00`).toLocaleDateString()}.`;
+  }
+
+  protected renewalNeedsAttention(policy: PolicyResponse): boolean {
+    return new Date(`${policy.endDate}T00:00:00`).getTime() - Date.now() <= 30 * 86_400_000;
+  }
+
+  protected canSubmitClaim(policyId: string): boolean {
+    const schedules = this.paymentSchedules().get(policyId) ?? [];
+    return schedules.some((schedule) => schedule.status.toLowerCase() === 'paid')
+      && !schedules.some((schedule) => schedule.status.toLowerCase() === 'overdue');
+  }
 
   protected openClaims(policyId: string): void {
-    if (!this.isPaymentComplete(policyId)) return;
+    if (!this.canSubmitClaim(policyId)) return;
     void this.router.navigate(['/customer/claims/new'], { queryParams: { policyId } });
   }
 
@@ -191,11 +285,13 @@ export class PolicyWorkspaceComponent {
     if (activePolicies.length === 0) return;
 
     this.isLoadingPayments.set(true);
-    forkJoin(activePolicies.map((policy) => this.paymentService.getPayments(policy.id))).subscribe({
-      next: (paymentsByPolicy) => {
-        this.paidPolicyIds.set(new Set(activePolicies
-          .filter((_, index) => paymentsByPolicy[index].some((payment) => payment.status.toLowerCase() === 'completed'))
-          .map((policy) => policy.id)));
+    forkJoin({
+      plans: this.premiumService.getPlans(),
+      schedulesByPolicy: forkJoin(activePolicies.map((policy) => this.premiumService.getSchedules(policy.id)))
+    }).subscribe({
+      next: ({ plans, schedulesByPolicy }) => {
+        this.premiumPlans.set(plans);
+        this.paymentSchedules.set(new Map(activePolicies.map((policy, index) => [policy.id, schedulesByPolicy[index]])));
         this.isLoadingPayments.set(false);
       },
       error: () => this.isLoadingPayments.set(false)
@@ -225,5 +321,12 @@ export class PolicyWorkspaceComponent {
     if (typeof error.error?.detail === 'string') return error.error.detail;
     if (typeof error.error?.title === 'string') return error.error.title;
     return 'We could not create this policy. Please try again.';
+  }
+
+  private getPremiumErrorMessage(error: HttpErrorResponse): string {
+    if (error.status === 404) return 'The selected premium plan is no longer available.';
+    if (error.status === 409) return 'A payment schedule already exists for this policy. Refresh the page to view it.';
+    if (typeof error.error?.detail === 'string') return error.error.detail;
+    return 'We could not create a premium schedule. Please try again.';
   }
 }

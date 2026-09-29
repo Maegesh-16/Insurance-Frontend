@@ -4,6 +4,8 @@ import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PolicyResponse } from '../../../policy/models/policy.models';
 import { PolicyService } from '../../../policy/services/policy.service';
+import { PremiumSchedule } from '../../../premium/models/premium.models';
+import { PremiumService } from '../../../premium/services/premium.service';
 import { CheckoutPaymentRequest, CheckoutPaymentResponse } from '../../models/payment.models';
 import { PaymentService } from '../../services/payment.service';
 
@@ -16,9 +18,11 @@ export class PolicyCheckoutComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly policyService = inject(PolicyService);
+  private readonly premiumService = inject(PremiumService);
   private readonly paymentService = inject(PaymentService);
   private paymentAttempt: { request: CheckoutPaymentRequest; idempotencyKey: string } | null = null;
   protected readonly policy = signal<PolicyResponse | null>(null);
+  protected readonly installment = signal<PremiumSchedule | null>(null);
   protected readonly isLoading = signal(true);
   protected readonly isPaying = signal(false);
   protected readonly error = signal('');
@@ -26,8 +30,9 @@ export class PolicyCheckoutComponent {
 
   constructor() {
     const policyId = this.route.snapshot.paramMap.get('policyId');
+    const scheduleId = this.route.snapshot.queryParamMap.get('scheduleId');
     const customerId = this.getCustomerId();
-    if (!policyId || !customerId) {
+    if (!policyId || !scheduleId || !customerId) {
       this.error.set('We could not find the policy selected for checkout.');
       this.isLoading.set(false);
       return;
@@ -38,9 +43,8 @@ export class PolicyCheckoutComponent {
         if (!policy || policy.status !== 3) {
           this.error.set('Only approved active policies are available for payment. Check My Applications for underwriting status.');
         } else {
-          this.policy.set(policy);
+          this.loadInstallment(policy, scheduleId);
         }
-        this.isLoading.set(false);
       },
       error: (error: HttpErrorResponse) => this.handleError(error)
     });
@@ -48,11 +52,13 @@ export class PolicyCheckoutComponent {
 
   protected payNow(): void {
     const policy = this.policy();
-    if (!policy || this.isPaying()) return;
+    const installment = this.installment();
+    if (!policy || !installment || this.isPaying()) return;
     const paymentAttempt = this.paymentAttempt ??= {
       request: {
         policyId: policy.id,
-        amount: policy.premiumAmount,
+        scheduleId: installment.scheduleId,
+        amount: installment.amount,
         method: 'Online'
       },
       idempotencyKey: sessionStorage.getItem(this.idempotencyKeyStorageName(policy.id)) ?? crypto.randomUUID()
@@ -78,6 +84,22 @@ export class PolicyCheckoutComponent {
   }
 
   private idempotencyKeyStorageName(policyId: string): string { return `insurance.payment.${policyId}`; }
+
+  private loadInstallment(policy: PolicyResponse, scheduleId: string): void {
+    this.premiumService.getSchedules(policy.id).subscribe({
+      next: (schedules) => {
+        const installment = schedules.find((schedule) => schedule.scheduleId === scheduleId && schedule.status.toLowerCase() !== 'paid') ?? null;
+        if (!installment) {
+          this.error.set('This installment is no longer available for payment. Refresh your policy payment schedule.');
+        } else {
+          this.policy.set(policy);
+          this.installment.set(installment);
+        }
+        this.isLoading.set(false);
+      },
+      error: (error: HttpErrorResponse) => this.handleError(error)
+    });
+  }
 
   private handleError(error: HttpErrorResponse): void {
     this.isLoading.set(false);
