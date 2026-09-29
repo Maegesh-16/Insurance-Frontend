@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { ClaimDetail, ClaimLookup, ClaimSummary, CreateClaimRequest } from '../models/claim.models';
+import { ClaimDetail, ClaimDocument, ClaimLookup, ClaimSummary, CreateClaimRequest } from '../models/claim.models';
 
 @Injectable({ providedIn: 'root' })
 export class ClaimApiService {
@@ -11,7 +11,14 @@ export class ClaimApiService {
   getMyClaims() { return this.http.get<ClaimSummary[]>(`${this.api}/claims/mine`); }
   getClaim(claimId: number) { return this.http.get<ClaimDetail>(`${this.api}/claims/${claimId}`); }
   createClaim(request: CreateClaimRequest) { return this.http.post<ClaimDetail>(`${this.api}/claims`, request); }
+  uploadDocument(claimId: number, documentTypeId: number, file: File) {
+    const formData = new FormData();
+    formData.append('documentTypeId', String(documentTypeId));
+    formData.append('file', file);
+    return this.http.post<ClaimDocument>(`${this.api}/claims/${claimId}/documents/upload`, formData);
+  }
   getClaimTypes() { return this.http.get<ClaimLookup[]>(`${this.api}/claim-lookups/types`); }
   getClaimStatuses() { return this.http.get<ClaimLookup[]>(`${this.api}/claim-lookups/statuses`); }
   getPriorities() { return this.http.get<ClaimLookup[]>(`${this.api}/claim-lookups/priorities`); }
+  getDocumentTypes() { return this.http.get<ClaimLookup[]>(`${this.api}/claim-lookups/document-types`); }
 }
