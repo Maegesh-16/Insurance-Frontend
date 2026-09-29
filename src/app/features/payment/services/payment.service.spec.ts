@@ -34,7 +34,7 @@ describe('PaymentService', () => {
   });
 
   it('submits checkout with an idempotency key', () => {
-    const checkout = { policyId: 'policy-1', amount: 2500, method: 'Online' };
+    const checkout = { policyId: 'policy-1', scheduleId: 'schedule-1', amount: 2500, method: 'Online' };
 
     service.checkout(checkout, 'checkout-attempt-1').subscribe();
 

@@ -34,4 +34,21 @@ describe('PremiumService', () => {
     expect(request.request.body).toEqual({ policyId: 'policy-1', policyTypeId: 'type-1', frequency: 'Quarterly' });
     request.flush({ policyId: 'policy-1', planId: 'plan-1', basePremium: 6000, discountPercentage: 0, discountAmount: 0, payableAmount: 6000 });
   });
+
+  it('loads payment schedules directly from PaymentService', () => {
+    service.getSchedules('policy-1').subscribe();
+
+    const request = http.expectOne('/payment-api/api/premium/schedules?policyId=policy-1');
+    expect(request.request.method).toBe('GET');
+    request.flush([]);
+  });
+
+  it('creates payment schedules directly in PaymentService', () => {
+    service.createSchedules({ policyId: 'policy-1', frequency: 'Quarterly' }).subscribe();
+
+    const request = http.expectOne('/payment-api/api/premium/schedules');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ policyId: 'policy-1', frequency: 'Quarterly' });
+    request.flush([]);
+  });
 });
