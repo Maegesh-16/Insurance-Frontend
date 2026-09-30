@@ -32,7 +32,6 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { label: 'Profile', route: '/compliance/profile', roles: ['ComplianceOfficer'] },
   { label: 'User administration', route: '/administration', roles: ['PlatformAdmin'] },
   { label: 'Policy products', route: '/policy-products', roles: ['PlatformAdmin'] },
-  { label: 'Premium plans', route: '/premium-plans', roles: ['PlatformAdmin'] },
   { label: 'Policies', route: '/policies', roles: ['SupportAgent'] },
   { label: 'KYC approval', route: '/kyc-review', roles: ['KycReviewer'] },
   { label: 'Claims', route: '/claims', roles: ['SupportAgent'] },

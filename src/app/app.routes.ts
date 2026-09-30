@@ -9,7 +9,6 @@ import { ClaimFormComponent } from './features/claim/pages/claim-form/claim-form
 import { NotificationHistoryComponent } from './features/notification/pages/notification-history/notification-history.component';
 import { PremiumWorkspaceComponent } from './features/premium/pages/premium-workspace/premium-workspace.component';
 import { PolicyCheckoutComponent } from './features/payment/pages/policy-checkout/policy-checkout.component';
-import { PremiumPlansComponent } from './features/premium/pages/premium-plans/premium-plans.component';
 import { ComplianceWorkspaceComponent } from './features/compliance/pages/compliance-workspace/compliance-workspace.component';
 import { PolicyManagementComponent } from './features/policy/pages/policy-management/policy-management.component';
 import { authGuard } from './features/identity/guards/auth.guard';
@@ -66,7 +65,7 @@ export const routes: Routes = [
 			{ path: 'administration', component: AdministrationComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Administration | SureCover' },
 			{ path: 'policy-products', component: PolicyProductManagementComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Policy Products | SureCover' },
 			{ path: 'policy-management', component: PolicyManagementComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin', 'PolicyUnderwriter'] }, title: 'Policy Management | SureCover' },
-			{ path: 'premium-plans', component: PremiumPlansComponent, canActivate: [authGuard], data: { roles: ['PlatformAdmin'] }, title: 'Premium Plans | SureCover' },
+			{ path: 'premium-plans', redirectTo: '/policy-products', pathMatch: 'full' },
 			{ path: 'profile', component: CustomerOnboardingComponent, canActivate: [authGuard], data: { roles: ['Customer'] }, title: 'Profile and KYC | SureCover' },
 			{ path: 'kyc-review', component: KycReviewComponent, canActivate: [authGuard], data: { roles: ['KycReviewer'] }, title: 'KYC Approval | SureCover' },
 			{ path: 'kyc-history', component: KycHistoryComponent, canActivate: [authGuard], data: { roles: ['KycReviewer'] }, title: 'KYC History | SureCover' },
