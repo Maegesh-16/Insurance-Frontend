@@ -85,13 +85,28 @@ export class DashboardComponent {
       { label: 'Profile details', complete: Boolean(customer?.phoneNumber && customer.dateOfBirth) },
       { label: 'Address', complete: customer?.address !== null && customer?.address !== undefined },
       { label: 'KYC verification', complete: customer?.kyc?.status === 2 },
-      { label: 'Nominee', complete: customer?.nominee !== null && customer?.nominee !== undefined }
+      { label: 'Nominee', complete: Boolean(customer?.nominee?.fullName?.trim() && customer.nominee.relationship?.trim() && customer.nominee.phoneNumber?.trim()) }
     ];
   });
   protected readonly completedProfileSteps = computed(() => this.profileChecklist().filter((item) => item.complete).length);
   protected readonly nextPremium = computed(() => this.premiumSchedules()
     .filter((schedule) => schedule.status.toLowerCase() !== 'paid' && new Date(schedule.dueDate) >= new Date())
     .sort((first, second) => first.dueDate.localeCompare(second.dueDate))[0] ?? null);
+  protected readonly nextAction = computed(() => {
+    if (this.customer()?.kyc?.status !== 2) {
+      return { title: 'Complete your profile and KYC.', label: 'Complete KYC', route: '/customer/kyc' };
+    }
+    if (this.profileChecklist().some((item) => !item.complete)) {
+      return { title: 'Complete your profile details.', label: 'Review profile', route: '/customer/profile' };
+    }
+    if (this.nextPremium()) {
+      return { title: 'Review your upcoming premium.', label: 'Review payment schedule', route: '/customer/policies' };
+    }
+    if (this.activePolicies().length) {
+      return { title: 'Review your active protection.', label: 'View my policies', route: '/customer/policies' };
+    }
+    return { title: 'Find coverage that fits your needs.', label: 'Browse insurance', route: '/customer/insurance-products' };
+  });
   protected readonly openClaimCount = computed(() => this.claimCount() ?? 0);
   protected readonly newApplications = computed(() => this.underwriterPolicies().filter((policy) => policy.status === 1));
   protected readonly pendingApplications = computed(() => this.underwriterPolicies().filter((policy) => policy.status === 2));

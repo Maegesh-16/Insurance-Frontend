@@ -29,7 +29,7 @@
             <div class="claim-card-main"><p class="claim-number">{{ claim.claimNumber }}</p><p class="claim-type">{{ claim.claimTypeName }}</p></div>
             <span class="status-badge" [class]="badgeClass(claim.claimStatusName)">{{ claim.claimStatusName }}</span>
             <div class="claim-card-detail"><span>Incident</span><strong>{{ claim.incidentDate | date:'dd MMM y' }}</strong></div>
-            <div class="claim-card-detail amount"><span>Claim amount</span><strong>{{ claim.claimAmount | currency:'USD':'symbol':'1.0-0' }}</strong></div>
+            <div class="claim-card-detail amount"><span>Claim amount</span><strong>{{ claim.claimAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</strong></div>
           </a>
         } @empty {
           <div class="customer-claims-empty"><h2>{{ claims().length ? 'No matching claims' : 'No claims submitted yet' }}</h2><p>{{ claims().length ? 'Try changing your search or status filter.' : 'Create a claim when you need help with a covered incident.' }}</p>@if (!claims().length) { <a class="primary-button" [routerLink]="newClaimRoute"><svg lucideFilePlus2></svg><span>New claim</span></a> }</div>
@@ -57,7 +57,7 @@
 <section class="metrics">
   <article><p>Open claims</p><strong>{{ openCount() }}</strong><span>Awaiting resolution</span></article>
   <article><p>In assessment</p><strong>{{ assessmentCount() }}</strong><span>Assessor review in progress</span></article>
-  <article><p>Outstanding value</p><strong>{{ outstandingAmount() | currency:'USD':'symbol':'1.0-0' }}</strong><span>Across open claim files</span></article>
+  <article><p>Outstanding value</p><strong>{{ outstandingAmount() | currency:'INR':'symbol-narrow':'1.0-0' }}</strong><span>Across open claim files</span></article>
   <article><p>Shown in queue</p><strong>{{ filteredClaims().length }}</strong><span>Matching current filters</span></article>
 </section>
 
@@ -72,7 +72,7 @@
     </div>
   </div>
   <div class="table-wrap"><table><thead><tr><th>Claim</th><th>Type</th><th>Status</th><th>Priority</th><th>Incident</th><th class="amount">Claim amount</th><th class="amount">Settled</th></tr></thead>
-    <tbody>@for (claim of filteredClaims(); track claim.claimId) { <tr [routerLink]="[claimsRoute, claim.claimId]"><td><strong>{{ claim.claimNumber }}</strong><span>Policy {{ claim.policyId }}</span></td><td>{{ claim.claimTypeName }}</td><td><span class="status-badge" [class]="badgeClass(claim.claimStatusName)">{{ claim.claimStatusName }}</span></td><td>{{ claim.priorityName }}</td><td>{{ claim.incidentDate | date:'dd MMM y' }}</td><td class="amount">{{ claim.claimAmount | currency:'USD':'symbol':'1.0-0' }}</td><td class="amount">{{ claim.settledAmount | currency:'USD':'symbol':'1.0-0' }}</td></tr> } @empty { <tr><td class="empty" colspan="7">No claims match this search or status filter.</td></tr> }</tbody>
+    <tbody>@for (claim of filteredClaims(); track claim.claimId) { <tr [routerLink]="[claimsRoute, claim.claimId]"><td><strong>{{ claim.claimNumber }}</strong><span>Policy {{ claim.policyId }}</span></td><td>{{ claim.claimTypeName }}</td><td><span class="status-badge" [class]="badgeClass(claim.claimStatusName)">{{ claim.claimStatusName }}</span></td><td>{{ claim.priorityName }}</td><td>{{ claim.incidentDate | date:'dd MMM y' }}</td><td class="amount">{{ claim.claimAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</td><td class="amount">{{ claim.settledAmount | currency:'INR':'symbol-narrow':'1.0-0' }}</td></tr> } @empty { <tr><td class="empty" colspan="7">No claims match this search or status filter.</td></tr> }</tbody>
   </table></div>
 </section>
 }

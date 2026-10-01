@@ -57,6 +57,7 @@ export class AuthPageComponent {
   }
 
   protected submit(): void {
+    if (this.isSubmitting()) return;
     this.apiError.set('');
     this.successMessage.set('');
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
@@ -64,6 +65,7 @@ export class AuthPageComponent {
     const { email, password, userName, confirmPassword } = this.form.getRawValue();
     if (this.isResettingPassword() && password !== confirmPassword) {
       this.apiError.set('Passwords do not match.');
+      this.isSubmitting.set(false);
       return;
     }
     if (this.isForgotPassword()) {
@@ -72,7 +74,11 @@ export class AuthPageComponent {
     }
     if (this.isResettingPassword()) {
       const token = this.route.snapshot.queryParamMap.get('token');
-      if (!token) { this.apiError.set('This password link is invalid or incomplete.'); return; }
+      if (!token) {
+        this.apiError.set('This password link is invalid or incomplete.');
+        this.isSubmitting.set(false);
+        return;
+      }
       this.submitPasswordReset(token, password);
       return;
     }
@@ -123,6 +129,7 @@ export class AuthPageComponent {
 
   private getErrorMessage(error: HttpErrorResponse): string {
     if (error.status === 0) return 'Cannot reach Identity Service. Start the backend and try again.';
+    if (error.status === 429) return 'The Identity Service is temporarily rate-limited by Render. Wait a minute and try again.';
     if (typeof error.error?.detail === 'string') return error.error.detail;
     if (typeof error.error?.title === 'string') return error.error.title;
     if (error.status === 401) return 'Your email or password is incorrect.';

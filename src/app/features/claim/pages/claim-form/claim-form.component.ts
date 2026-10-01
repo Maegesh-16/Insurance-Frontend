@@ -9,6 +9,7 @@ import { PolicyResponse } from '../../../policy/models/policy.models';
 import { PolicyService } from '../../../policy/services/policy.service';
 import { ClaimLookup, CreateClaimRequest } from '../../models/claim.models';
 import { ClaimApiService } from '../../services/claim-api.service';
+import { hasEligibleClaimPayment } from '../../services/claim-eligibility';
 
 interface ClaimFormModel {
   policyId: string | null;
@@ -103,7 +104,7 @@ export class ClaimFormComponent {
         forkJoin(activePolicies.map((policy) => this.paymentService.getPayments(policy.id))).subscribe({
           next: (paymentsByPolicy) => {
             const eligiblePolicies = activePolicies.filter((_, index) =>
-              paymentsByPolicy[index].some((payment) => payment.status.toLowerCase() === 'completed'));
+              hasEligibleClaimPayment(paymentsByPolicy[index].map((payment) => payment.status)));
             this.policies.set(eligiblePolicies);
             const requestedPolicyId = this.route.snapshot.queryParamMap.get('policyId');
             if (requestedPolicyId && eligiblePolicies.some((policy) => policy.id === requestedPolicyId)) {

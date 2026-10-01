@@ -7,6 +7,7 @@ import { forkJoin } from 'rxjs';
 import { CustomerResponse } from '../../../customer/models/customer.models';
 import { installmentPremium, PREMIUM_FREQUENCIES, PremiumFrequency, PremiumPlan, PremiumSchedule } from '../../../premium/models/premium.models';
 import { PremiumService } from '../../../premium/services/premium.service';
+import { hasEligibleClaimPayment } from '../../../claim/services/claim-eligibility';
 import { CreatePolicyRequest, PolicyResponse, PolicyType } from '../../models/policy.models';
 import { PolicyService } from '../../services/policy.service';
 import { UpdatePolicyRequest } from '../../models/policy.models';
@@ -199,8 +200,7 @@ export class PolicyWorkspaceComponent {
 
   protected canSubmitClaim(policyId: string): boolean {
     const schedules = this.paymentSchedules().get(policyId) ?? [];
-    return schedules.some((schedule) => schedule.status.toLowerCase() === 'paid')
-      && !schedules.some((schedule) => schedule.status.toLowerCase() === 'overdue');
+    return hasEligibleClaimPayment(schedules.map((schedule) => schedule.status));
   }
 
   protected openClaims(policyId: string): void {
@@ -231,6 +231,10 @@ export class PolicyWorkspaceComponent {
     if (!this.customer || this.form.invalid) { this.form.markAllAsTouched(); return; }
     if (this.customer.kyc?.status !== 2) {
       this.error.set('Your KYC must be verified before you can submit a policy application.');
+      return;
+    }
+    if (!this.customer.nominee) {
+      this.error.set('Add nominee details to your profile before submitting a policy application.');
       return;
     }
     const value = this.form.getRawValue();

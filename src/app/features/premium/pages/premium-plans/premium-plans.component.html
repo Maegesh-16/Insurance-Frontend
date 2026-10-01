@@ -12,7 +12,7 @@
     </div>
   </div>
 
-  @if (error()) { <p class="mt-6 border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error() }}</p> }
+  @if (error()) { <div class="mt-6 flex flex-wrap items-center justify-between gap-3 border border-red-200 bg-red-50 p-4 text-sm text-red-800"><p>{{ error() }}</p><button class="border border-red-700 px-3 py-2 font-semibold" type="button" [disabled]="isLoading()" (click)="retryPlans()">Retry</button></div> }
   @if (saveSuccess()) { <p class="mt-6 border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ saveSuccess() }}</p> }
   @if (policyTypeSaveSuccess()) { <p class="mt-6 border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ policyTypeSaveSuccess() }}</p> }
   @if (!isLoading() && !isLoadingPolicyTypes() && availablePolicyTypes().length) { <p class="mt-5 text-sm text-emerald-900/65"><strong>{{ completeProductCount() }} of {{ availablePolicyTypes().length }}</strong> active policy products have all four payment frequencies configured.</p> }

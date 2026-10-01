@@ -8,7 +8,7 @@ export interface NavigationItem {
 }
 
 export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
-  { label: 'Overview', route: '/dashboard', roles: ['PlatformAdmin', 'KycReviewer', 'PolicyUnderwriter', 'ClaimsAdjuster', 'PaymentOperations', 'SupportAgent'], exact: true },
+  { label: 'Overview', route: '/dashboard', roles: ['PlatformAdmin'], exact: true },
   { label: 'Dashboard', route: '/customer/dashboard', roles: ['Customer'], exact: true },
   { label: 'My Profile', route: '/customer/profile', roles: ['Customer'] },
   { label: 'KYC', route: '/customer/kyc', roles: ['Customer'] },

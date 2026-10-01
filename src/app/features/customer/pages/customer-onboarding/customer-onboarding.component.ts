@@ -135,10 +135,11 @@ export class CustomerOnboardingComponent {
       return;
     }
     const value = this.form.getRawValue();
+    const hasNomineeDetails = this.hasCompleteNominee();
     const request: CustomerRequest = {
       firstName: value.firstName, lastName: value.lastName, email: value.email, phoneNumber: value.phoneNumber, dateOfBirth: value.dateOfBirth,
       address: this.includeAddress() ? { line1: value.line1, line2: value.line2 || null, city: value.city, state: value.state, postalCode: value.postalCode, country: value.country } : null,
-      nominee: this.includeNominee() ? { fullName: value.nomineeName, relationship: value.nomineeRelationship, phoneNumber: value.nomineePhone, email: value.nomineeEmail || null } : null,
+      nominee: hasNomineeDetails ? { fullName: value.nomineeName.trim(), relationship: value.nomineeRelationship.trim(), phoneNumber: value.nomineePhone.trim(), email: value.nomineeEmail.trim() || null } : null,
       kyc: { documentType: value.documentType, documentNumber: value.documentNumber, status: 1, verifiedAtUtc: null }
     };
     const existingCustomer = this.currentCustomer();

@@ -52,15 +52,14 @@ export class PremiumPlansComponent {
   protected newPolicyType: CreatePolicyTypeRequest = this.blankPolicyType();
 
   constructor() {
-    this.premiumService.getPlans().subscribe({
-      next: (plans) => { this.plans.set(plans); this.isLoading.set(false); },
-      error: (error: HttpErrorResponse) => { this.error.set(this.msg(error)); this.isLoading.set(false); }
-    });
+    this.reloadPlans();
     this.policyService.getTypes().subscribe({
       next: (types) => { this.policyTypes.set(types); this.isLoadingPolicyTypes.set(false); },
       error: () => this.isLoadingPolicyTypes.set(false)
     });
   }
+
+  protected retryPlans(): void { this.reloadPlans(); }
 
   protected openForm(): void { this.newPlan = this.blankPlan(); this.saveError.set(''); this.saveSuccess.set(''); this.showForm.set(true); }
   protected openPolicyTypeForm(): void { this.newPolicyType = this.blankPolicyType(); this.policyTypeSaveError.set(''); this.policyTypeSaveSuccess.set(''); this.showPolicyTypeForm.set(true); }
@@ -192,7 +191,12 @@ export class PremiumPlansComponent {
   }
 
   private reloadPlans(): void {
-    this.premiumService.getPlans().subscribe({ next: (plans) => this.plans.set(plans), error: () => {} });
+    this.isLoading.set(true);
+    this.error.set('');
+    this.premiumService.getPlans().pipe(timeout(30000)).subscribe({
+      next: (plans) => { this.plans.set(plans); this.isLoading.set(false); },
+      error: (error: HttpErrorResponse) => { this.error.set(this.msg(error)); this.isLoading.set(false); }
+    });
   }
 
   private blankPlan(): PremiumPlanDraft { return { policyTypeId: '', frequency: '', basePremium: 0 }; }
