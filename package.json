@@ -6,6 +6,7 @@
     "start": "npm run start:remote",
     "start:remote": "ng serve --proxy-config proxy.conf.json",
     "start:local": "ng serve --proxy-config proxy.local.conf.json",
+    "wake:services": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/wake-backend-services.ps1",
     "seed:business-knowledge": "node scripts/seed-business-knowledge.mjs",
     "seed:business-knowledge:dry-run": "node scripts/seed-business-knowledge.mjs --dry-run",
     "build": "ng build",

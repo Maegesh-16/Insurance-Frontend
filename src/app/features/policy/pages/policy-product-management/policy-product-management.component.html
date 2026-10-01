@@ -3,7 +3,7 @@
     <div>
       <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Platform administration</p>
       <h1 class="mt-2 font-serif text-4xl leading-tight text-emerald-950 sm:text-5xl">Policy products</h1>
-      <p class="mt-3 max-w-2xl text-base leading-7 text-emerald-900/65">Manage the catalog of insurance products customers can browse and purchase.</p>
+      <p class="mt-3 max-w-2xl text-base leading-7 text-emerald-900/65">Manage the catalog and select a product to view or add its premium plans.</p>
     </div>
     <button type="button" class="border border-emerald-800 bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white" (click)="openCreateForm()">Add product</button>
   </div>
@@ -16,12 +16,12 @@
   } @else {
     <div class="mt-8 overflow-x-auto border border-emerald-950/10 bg-white">
       <table class="w-full min-w-180 text-left text-sm">
-        <thead class="border-b border-emerald-950/10 bg-emerald-50"><tr><th class="px-4 py-3">Product</th><th class="px-4 py-3">Code</th><th class="px-4 py-3">Description</th><th class="px-4 py-3 text-right">Annual base premium</th><th class="px-4 py-3">Availability</th></tr></thead>
+        <thead class="border-b border-emerald-950/10 bg-emerald-50"><tr><th class="px-4 py-3">Product</th><th class="px-4 py-3">Code</th><th class="px-4 py-3">Description</th><th class="px-4 py-3 text-right">Annual base premium</th><th class="px-4 py-3">Availability</th><th class="px-4 py-3 text-right">Plans</th><th class="px-4 py-3 text-right">Action</th></tr></thead>
         <tbody>
           @for (product of products(); track product.id) {
-            <tr class="border-b border-emerald-950/10 last:border-0"><td class="px-4 py-3 font-semibold text-emerald-950">{{ product.name }}</td><td class="px-4 py-3 font-mono text-xs text-emerald-900/70">{{ product.code }}</td><td class="max-w-md px-4 py-3 text-emerald-900/70">{{ product.description }}</td><td class="px-4 py-3 text-right font-semibold">{{ product.basePremium | currency:'INR':'symbol':'1.0-0' }}</td><td class="px-4 py-3"><span class="border px-2 py-1 text-xs font-bold uppercase tracking-[0.08em]" [class]="product.isAvailable === false ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-emerald-200 bg-emerald-50 text-emerald-800'">{{ product.isAvailable === false ? 'Unavailable' : 'Available' }}</span></td></tr>
+            <tr class="border-b border-emerald-950/10 last:border-0 hover:bg-emerald-50/50"><td class="px-4 py-3 font-semibold"><button type="button" class="text-left text-emerald-950 underline decoration-emerald-700/35 underline-offset-4 hover:decoration-emerald-700" (click)="openPlans(product)" [attr.aria-label]="'View premium plans for ' + product.name">{{ product.name }}</button></td><td class="px-4 py-3 font-mono text-xs text-emerald-900/70">{{ product.code }}</td><td class="max-w-md px-4 py-3 text-emerald-900/70">{{ product.description }}</td><td class="px-4 py-3 text-right font-semibold">{{ product.basePremium | currency:'INR':'symbol':'1.0-0' }}</td><td class="px-4 py-3"><span class="border px-2 py-1 text-xs font-bold uppercase tracking-[0.08em]" [class]="product.isAvailable === false ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-emerald-200 bg-emerald-50 text-emerald-800'">{{ product.isAvailable === false ? 'Unavailable' : 'Available' }}</span></td><td class="px-4 py-3 text-right"><button type="button" class="border border-emerald-800 px-3 py-2 text-sm font-semibold text-emerald-800" (click)="openPlans(product)">{{ isLoadingPlans() ? 'Loading...' : plansForProduct(product.id).length + ' plans' }}</button></td><td class="px-4 py-3 text-right"><button type="button" class="border border-emerald-800 px-3 py-2 text-sm font-semibold text-emerald-800 disabled:opacity-50" [disabled]="savingAvailabilityId() === product.id" (click)="setProductAvailability(product)">{{ savingAvailabilityId() === product.id ? 'Saving...' : product.isAvailable === false ? 'Restore' : 'Archive' }}</button></td></tr>
           } @empty {
-            <tr><td colspan="5" class="px-4 py-6 text-center text-emerald-900/65">No policy products have been added yet.</td></tr>
+            <tr><td colspan="7" class="px-4 py-6 text-center text-emerald-900/65">No policy products have been added yet.</td></tr>
           }
         </tbody>
       </table>
@@ -41,6 +41,50 @@
         <label class="grid gap-2 text-sm font-semibold text-emerald-950">Annual base premium<input type="number" min="1" step="1" formControlName="basePremium" class="border border-emerald-900/20 px-3 py-2.5 font-normal" />@if (form.controls.basePremium.touched && form.controls.basePremium.invalid) { <span class="text-xs font-medium text-red-700">Enter an amount greater than zero.</span> }</label>
         <div class="mt-2 flex justify-end gap-3"><button type="button" class="border border-emerald-900/20 px-4 py-2 text-sm font-semibold" [disabled]="isSaving()" (click)="showForm.set(false)">Cancel</button><button type="submit" class="border border-emerald-800 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" [disabled]="isSaving()">{{ isSaving() ? 'Saving...' : 'Create product' }}</button></div>
       </form>
+    </section>
+  </div>
+}
+
+@if (selectedProduct(); as product) {
+  <div class="fixed inset-0 z-50 grid place-items-center bg-emerald-950/40 p-5" role="presentation">
+    <section class="max-h-[calc(100vh-2.5rem)] w-full max-w-2xl overflow-y-auto border border-emerald-950/10 bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="plans-dialog-title">
+      <div class="flex items-start justify-between gap-4">
+        <div><p class="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">{{ product.code }}</p><h2 id="plans-dialog-title" class="mt-1 font-serif text-3xl text-emerald-950">{{ product.name }} premium plans</h2><p class="mt-2 text-sm text-emerald-900/65">Annual base premium: {{ product.basePremium | currency:'INR':'symbol-narrow':'1.0-0' }}</p></div>
+        <button type="button" class="border border-emerald-900/20 px-3 py-2 text-sm font-semibold" [disabled]="isSavingPlan()" (click)="closePlans()">Close</button>
+      </div>
+
+      @if (planError()) { <p role="alert" class="mt-5 border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ planError() }}</p> }
+      @if (planSuccess()) { <p role="status" class="mt-5 border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{{ planSuccess() }}</p> }
+
+      @if (isLoadingPlans()) {
+        <p class="mt-6 text-sm text-emerald-900/65">Loading premium plans...</p>
+      } @else {
+        <div class="mt-6 overflow-x-auto border border-emerald-950/10">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-emerald-950/10 bg-emerald-50"><tr><th class="px-4 py-3">Frequency</th><th class="px-4 py-3 text-right">Installment premium</th></tr></thead>
+            <tbody>
+              @for (plan of plansForProduct(product.id); track plan.planId) {
+                <tr class="border-b border-emerald-950/10 last:border-0"><td class="px-4 py-3 font-semibold">{{ frequencyLabel(plan.frequency) }}</td><td class="px-4 py-3 text-right font-semibold">{{ plan.basePremium | currency:'INR':'symbol-narrow':'1.2-2' }}</td></tr>
+              } @empty {
+                <tr><td colspan="2" class="px-4 py-6 text-center text-emerald-900/65">No premium plans configured for this product.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (showPlanForm()) {
+          <form class="mt-6 border-t border-emerald-950/10 pt-6" (ngSubmit)="savePlan()">
+            <h3 class="font-serif text-2xl text-emerald-950">Add premium plan</h3>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <label class="grid gap-2 text-sm font-semibold text-emerald-950">Frequency<select name="frequency" class="border border-emerald-900/20 px-3 py-2.5 font-normal" [ngModel]="newPlan.frequency" (ngModelChange)="selectFrequency($event)"><option value="">Select frequency</option>@for (frequency of availableFrequencies(product.id); track frequency.value) { <option [value]="frequency.value">{{ frequency.label }}</option> }</select></label>
+              <label class="grid gap-2 text-sm font-semibold text-emerald-950">Installment premium (INR)<input name="basePremium" class="border border-emerald-900/20 px-3 py-2.5 font-normal" type="number" min="1" step="0.01" [(ngModel)]="newPlan.basePremium" /></label>
+            </div>
+            <div class="mt-5 flex justify-end gap-3"><button type="button" class="border border-emerald-900/20 px-4 py-2 text-sm font-semibold" [disabled]="isSavingPlan()" (click)="showPlanForm.set(false)">Cancel</button><button type="submit" class="border border-emerald-800 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" [disabled]="isSavingPlan()">{{ isSavingPlan() ? 'Saving...' : 'Create plan' }}</button></div>
+          </form>
+        } @else {
+          <div class="mt-6 flex items-center justify-between gap-4"><p class="text-sm text-emerald-900/65">{{ availableFrequencies(product.id).length }} of 4 standard frequencies remain.</p><button type="button" class="border border-emerald-800 bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" [disabled]="availableFrequencies(product.id).length === 0" (click)="openPlanForm()">{{ availableFrequencies(product.id).length === 0 ? 'All plans configured' : 'Add plan' }}</button></div>
+        }
+      }
     </section>
   </div>
 }
